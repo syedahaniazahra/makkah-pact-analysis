@@ -1,0 +1,11 @@
+# Credentials / session data - never commit
+.env
+accounts.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.venv/

@@ -1,0 +1,13 @@
+requests
+pandas
+vaderSentiment
+twscrape
+python-dotenv
+rapidfuzz
+langdetect
+better_profanity
+nltk
+streamlit
+plotly
+networkx
+numpy>=1.24
