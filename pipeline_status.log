@@ -1,0 +1,157 @@
+===== RUN START 2026-09-07T09:01:32Z =====
+fetch_x_data              : SUCCESS  (69s) - 0 new row(s)
+clean_x_data              : SUCCESS  (3s)
+preprocess_x_text         : FAILED   (16s) - **********************************************************************
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : FAILED   (2s) - KeyError: 'clean_text'
+add_sentiment             : FAILED   (2s) - KeyError: 'clean_text'
+relevance_and_relations   : FAILED   (4s) - KeyError: 'clean_text'
+build_network_v2          : FAILED   (3s) - KeyError: 'actors_mentioned'
+build_daily_timelines     : FAILED   (2s) - KeyError: 'actors_mentioned'
+===== RUN END 2026-09-07T09:03:15Z | overall=partial ok=3 skipped=0 failed=6 elapsed=103s =====
+PIPELINE_RUN|2026-09-07T09:03:15Z|partial|preprocess_x_text: **********************************************************************; extract_actor_mentions: KeyError: 'clean_text'; add_sentiment: KeyError: 'clean_text'; relevance_and_relations: KeyError: 'clean_text'; build_network_v2: KeyError: 'actors_mentioned'; build_daily_timelines: KeyError: 'actors_mentioned'
+
+===== RUN START 2026-09-07T10:09:09Z =====
+fetch_x_data              : SUCCESS  (64s) - 0 new row(s)
+clean_x_data              : SUCCESS  (3s)
+preprocess_x_text         : FAILED   (7s) - **********************************************************************
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : FAILED   (2s) - KeyError: 'clean_text'
+add_sentiment             : FAILED   (2s) - KeyError: 'clean_text'
+relevance_and_relations   : FAILED   (4s) - KeyError: 'clean_text'
+build_network_v2          : FAILED   (3s) - KeyError: 'actors_mentioned'
+build_daily_timelines     : FAILED   (2s) - KeyError: 'actors_mentioned'
+===== RUN END 2026-09-07T10:10:39Z | overall=partial ok=3 skipped=0 failed=6 elapsed=89s =====
+PIPELINE_RUN|2026-09-07T10:10:39Z|partial|preprocess_x_text: **********************************************************************; extract_actor_mentions: KeyError: 'clean_text'; add_sentiment: KeyError: 'clean_text'; relevance_and_relations: KeyError: 'clean_text'; build_network_v2: KeyError: 'actors_mentioned'; build_daily_timelines: KeyError: 'actors_mentioned'
+
+===== RUN START 2026-09-07T11:20:05Z =====
+fetch_x_data              : SUCCESS  (63s) - 0 new row(s)
+clean_x_data              : SUCCESS  (3s)
+preprocess_x_text         : SKIPPED  (6s) - NLTK resource(s) [wordnet] are not available and could not be auto-downloaded (no network access, or a firewall is blocking nltk.download - this can also happen if this run is under a DIFFERENT Python
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : SKIPPED  (2s) - column(s) ['clean_text'] not found in x_data_cleaned.csv - preprocess_x_text.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+add_sentiment             : SKIPPED  (2s) - column(s) ['clean_text', 'actors_mentioned'] not found in x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it do
+relevance_and_relations   : SKIPPED  (4s) - column(s) ['clean_text', 'actors_mentioned'] not found in C:\Users\zahra\OneDrive\Documents\Project Files\x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed succes
+build_network_v2          : SUCCESS  (3s)
+build_daily_timelines     : SKIPPED  (2s) - column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+===== RUN END 2026-09-07T11:21:32Z | overall=partial ok=4 skipped=5 failed=0 elapsed=87s =====
+PIPELINE_RUN|2026-09-07T11:21:32Z|partial|preprocess_x_text: NLTK resource(s) [wordnet] are not available and could not be auto-downloaded (no network access, or a firewall is blocking nltk.download - this can also happen if this run is under a DIFFERENT Python; extract_actor_mentions: column(s) ['clean_text'] not found in x_data_cleaned.csv - preprocess_x_text.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.; add_sentiment: column(s) ['clean_text', 'actors_mentioned'] not found in x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it do; relevance_and_relations: column(s) ['clean_text', 'actors_mentioned'] not found in C:\Users\zahra\OneDrive\Documents\Project Files\x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed succes; build_daily_timelines: column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+
+===== RUN START 2026-09-07T11:29:27Z =====
+fetch_x_data              : SUCCESS  (66s) - 0 new row(s)
+clean_x_data              : SUCCESS  (3s)
+preprocess_x_text         : SKIPPED  (6s) - NLTK resource(s) [wordnet] are not available and could not be auto-downloaded (no network access, or a firewall is blocking nltk.download - this can also happen if this run is under a DIFFERENT Python
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : SKIPPED  (2s) - column(s) ['clean_text'] not found in x_data_cleaned.csv - preprocess_x_text.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+add_sentiment             : SKIPPED  (2s) - column(s) ['clean_text', 'actors_mentioned'] not found in x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it do
+relevance_and_relations   : SKIPPED  (3s) - column(s) ['clean_text', 'actors_mentioned'] not found in C:\Users\zahra\OneDrive\Documents\Project Files\x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed succes
+build_network_v2          : SUCCESS  (3s)
+build_daily_timelines     : SKIPPED  (2s) - column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+===== RUN END 2026-09-07T11:30:57Z | overall=partial ok=4 skipped=5 failed=0 elapsed=90s =====
+PIPELINE_RUN|2026-09-07T11:30:57Z|partial|preprocess_x_text: NLTK resource(s) [wordnet] are not available and could not be auto-downloaded (no network access, or a firewall is blocking nltk.download - this can also happen if this run is under a DIFFERENT Python; extract_actor_mentions: column(s) ['clean_text'] not found in x_data_cleaned.csv - preprocess_x_text.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.; add_sentiment: column(s) ['clean_text', 'actors_mentioned'] not found in x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it do; relevance_and_relations: column(s) ['clean_text', 'actors_mentioned'] not found in C:\Users\zahra\OneDrive\Documents\Project Files\x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed succes; build_daily_timelines: column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+
+===== RUN START 2026-09-07T15:12:45Z =====
+fetch_x_data              : SUCCESS  (72s) - 0 new row(s)
+clean_x_data              : SUCCESS  (4s)
+preprocess_x_text         : SUCCESS  (18s)
+extract_topics_hashtags   : SUCCESS  (4s)
+extract_actor_mentions    : SUCCESS  (3s)
+add_sentiment             : SUCCESS  (8s)
+relevance_and_relations   : SKIPPED  (788s) - Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle
+build_network_v2          : FAILED   (4s) - UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f7e5' in position 11: character maps to <undefined>
+build_daily_timelines     : SUCCESS  (3s)
+===== RUN END 2026-09-07T15:27:49Z | overall=partial ok=7 skipped=1 failed=1 elapsed=904s =====
+PIPELINE_RUN|2026-09-07T15:27:49Z|partial|relevance_and_relations: Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle; build_network_v2: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f7e5' in position 11: character maps to <undefined>
+
+===== RUN START 2026-09-08T09:37:01Z =====
+fetch_x_data              : SUCCESS  (109s) - 0 new row(s)
+clean_x_data              : SUCCESS  (3s)
+preprocess_x_text         : SUCCESS  (14s)
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : SUCCESS  (2s)
+add_sentiment             : SUCCESS  (6s)
+relevance_and_relations   : SKIPPED  (547s) - Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle
+build_network_v2          : FAILED   (19s) - UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f7e5' in position 11: character maps to <undefined>
+build_daily_timelines     : SUCCESS  (3s)
+===== RUN END 2026-09-08T09:48:48Z | overall=partial ok=7 skipped=1 failed=1 elapsed=707s =====
+PIPELINE_RUN|2026-09-08T09:48:48Z|partial|relevance_and_relations: Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle; build_network_v2: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f7e5' in position 11: character maps to <undefined>
+
+===== RUN START 2026-09-08T12:40:44Z =====
+fetch_x_data              : SUCCESS  (84s) - 0 new row(s)
+clean_x_data              : SUCCESS  (3s)
+preprocess_x_text         : SUCCESS  (23s)
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : SUCCESS  (2s)
+add_sentiment             : SUCCESS  (6s)
+relevance_and_relations   : FAILED   (2700s) - timed out after 2700s
+build_network_v2          : SUCCESS  (4s)
+build_daily_timelines     : SUCCESS  (2s)
+===== RUN END 2026-09-08T13:27:52Z | overall=partial ok=8 skipped=0 failed=1 elapsed=2828s =====
+PIPELINE_RUN|2026-09-08T13:27:52Z|partial|relevance_and_relations: timed out after 2700s
+
+===== RUN START 2026-09-08T20:31:45Z =====
+fetch_x_data              : SUCCESS  (67s) - 0 new row(s)
+clean_x_data              : SUCCESS  (3s)
+preprocess_x_text         : SUCCESS  (14s)
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : SUCCESS  (2s)
+add_sentiment             : SUCCESS  (6s)
+relevance_and_relations   : SUCCESS  (4s)
+build_network_v2          : SUCCESS  (3s)
+build_daily_timelines     : SUCCESS  (2s)
+===== RUN END 2026-09-08T20:33:30Z | overall=success ok=9 skipped=0 failed=0 elapsed=104s =====
+PIPELINE_RUN|2026-09-08T20:33:30Z|success|all steps completed
+
+===== RUN START 2026-09-09T21:26:41Z =====
+fetch_x_data              : SUCCESS  (93s) - 122 new row(s)
+clean_x_data              : SUCCESS  (76s)
+preprocess_x_text         : SUCCESS  (27s)
+extract_topics_hashtags   : SUCCESS  (4s)
+extract_actor_mentions    : SUCCESS  (2s)
+add_sentiment             : SUCCESS  (7s)
+relevance_and_relations   : SUCCESS  (1767s)
+build_network_v2          : SUCCESS  (4s)
+build_daily_timelines     : SUCCESS  (2s)
+===== RUN END 2026-09-09T21:59:44Z | overall=success ok=9 skipped=0 failed=0 elapsed=1983s =====
+PIPELINE_RUN|2026-09-09T21:59:44Z|success|all steps completed
+
+===== RUN START 2026-09-09T23:14:05Z =====
+fetch_x_data              : FAILED   (32s) - self.loop = _get_selector(loop if loop is not None else asyncio.get_running_loop())
+clean_x_data              : SUCCESS  (4s)
+preprocess_x_text         : SUCCESS  (15s)
+extract_topics_hashtags   : SUCCESS  (4s)
+extract_actor_mentions    : SUCCESS  (2s)
+add_sentiment             : SUCCESS  (7s)
+relevance_and_relations   : SUCCESS  (4s)
+build_network_v2          : SUCCESS  (3s)
+build_daily_timelines     : SUCCESS  (2s)
+===== RUN END 2026-09-09T23:15:18Z | overall=partial ok=8 skipped=0 failed=1 elapsed=72s =====
+PIPELINE_RUN|2026-09-09T23:15:18Z|partial|fetch_x_data: self.loop = _get_selector(loop if loop is not None else asyncio.get_running_loop())
+
+===== RUN START 2026-09-10T00:03:28Z =====
+fetch_x_data              : SUCCESS  (85s) - 0 new row(s)
+clean_x_data              : SUCCESS  (260s)
+preprocess_x_text         : SUCCESS  (27s)
+extract_topics_hashtags   : SUCCESS  (3s)
+extract_actor_mentions    : SUCCESS  (2s)
+add_sentiment             : SUCCESS  (6s)
+relevance_and_relations   : FAILED   (2700s) - timed out after 2700s
+build_network_v2          : SUCCESS  (3s)
+build_daily_timelines     : SUCCESS  (2s)
+===== RUN END 2026-09-10T00:54:56Z | overall=partial ok=8 skipped=0 failed=1 elapsed=3088s =====
+PIPELINE_RUN|2026-09-10T00:54:56Z|partial|relevance_and_relations: timed out after 2700s
+
+===== RUN START 2026-09-10T19:54:45Z =====
+fetch_x_data              : SUCCESS  (90s) - 101 new row(s)
+clean_x_data              : SUCCESS  (67s)
+preprocess_x_text         : SUCCESS  (23s)
+extract_topics_hashtags   : SUCCESS  (4s)
+extract_actor_mentions    : SUCCESS  (2s)
+add_sentiment             : SUCCESS  (6s)
+relevance_and_relations   : SKIPPED  (1867s) - Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle
+build_network_v2          : SUCCESS  (3s)
+build_daily_timelines     : SUCCESS  (2s)
+sync_to_github            : FAILED   (0s) - git add failed - remove the file manually to continue.
+===== RUN END 2026-09-10T20:29:09Z | overall=partial ok=8 skipped=1 failed=1 elapsed=2064s =====
+PIPELINE_RUN|2026-09-10T20:29:09Z|partial|relevance_and_relations: Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle; sync_to_github: git add failed - remove the file manually to continue.
+

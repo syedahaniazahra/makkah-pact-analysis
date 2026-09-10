@@ -1,7 +1,7 @@
 requests
 pandas
 vaderSentiment
-twscrape
+twifork[impersonate]==2.4.0
 python-dotenv
 rapidfuzz
 langdetect
@@ -11,3 +11,4 @@ streamlit
 plotly
 networkx
 numpy>=1.24
+groq>=1.7.0

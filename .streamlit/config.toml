@@ -1,0 +1,23 @@
+# Streamlit theme - added 2026-09-10 so the dashboard uses a deliberate,
+# warm editorial palette instead of Streamlit's stock white-background /
+# stark-blue-button default. This is read automatically both locally
+# (streamlit run app.py) and on Streamlit Community Cloud once pushed - no
+# separate "dashboard settings" step needed.
+#
+# Palette rationale: a warm paper background (not stark white) + a single
+# deep-teal accent color used consistently for buttons, active tab
+# underlines, and focus states, paired with the Source Serif 4 / IBM Plex
+# Sans fonts set in app.py's own CSS block. Deliberately not a
+# purple-to-blue gradient or a saturated default-template blue - see
+# CLAUDE_INVESTIGATION_LOG.md's "AI slop" research notes for the sources
+# behind that choice.
+[theme]
+base = "light"
+primaryColor = "#1f5f5b"
+backgroundColor = "#faf8f5"
+secondaryBackgroundColor = "#f0ece3"
+textColor = "#2b2621"
+borderColor = "#d9d2c5"
+baseRadius = "small"
+buttonRadius = "small"
+showWidgetBorder = true

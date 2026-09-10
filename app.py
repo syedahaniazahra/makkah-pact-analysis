@@ -3,15 +3,32 @@ app.py
 
 Phase 8 - Streamlit dashboard for the Makkah/Mecca Joint Defence Pact
 project. Reads the already-built analysis outputs (x_data_cleaned.csv,
-actor_network.json, daily_actor_timeline.csv, hashtag_frequency.csv, and
-daily_gdelt_timeline.csv if present) - this file does no new data
-processing beyond what's needed to render charts; all the heavy lifting
-(cleaning, dedup, sentiment, etc.) already happened in the earlier phase
-scripts.
+actor_network_v2.json, actor_centrality.csv, daily_actor_timeline.csv,
+hashtag_frequency.csv, daily_gdelt_timeline.csv if present, and
+pipeline_status.log for the header timestamp) - this file does no new data
+processing, and as of the collection/serving split below, no longer runs
+ANY other script either. All the heavy lifting (fetching, cleaning, dedup,
+sentiment, relation extraction, network rebuilding) happens entirely in
+run_pipeline.py, run independently of this dashboard on its own schedule
+(see run_pipeline.py's own docstring, and the Windows Task Scheduler setup
+notes delivered alongside it).
 
-Layout: a header (title + last-updated timestamp + a Refresh Data button)
-followed by five tabs - Actor Network, Timeline, Sentiment & Engagement,
-Hashtags, and a Data Explorer table.
+--- Collection/serving split ---
+This dashboard used to launch its own background subprocess chain
+(refresh_worker.py) when someone clicked "Refresh Data" - that button has
+been removed entirely, on purpose. This app now ONLY EVER READS existing
+files; it never fetches from X, never calls the Groq API, and never
+launches any other script. All of that now happens in run_pipeline.py, on
+a schedule (e.g. every few hours via Task Scheduler), fully decoupled from
+whether this dashboard is even open. The only button left in the header is
+"Check for updates", which does nothing more than clear Streamlit's cache
+and rerun - no subprocess, no blocking, no fetching - so the page just
+re-reads whatever's currently on disk.
+
+Layout: a header (title + a "Data last updated" line sourced from
+run_pipeline.py's own pipeline_status.log, plus a "Check for updates"
+button) followed by five tabs - Actor Network, Timeline, Sentiment &
+Engagement, Hashtags, and a Data Explorer table.
 
 Run:
     streamlit run app.py
@@ -20,9 +37,6 @@ Run:
 import ast
 import os
 import re
-import subprocess
-import sys
-import time
 from datetime import datetime
 
 import networkx as nx
@@ -34,38 +48,102 @@ import streamlit as st
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 X_DATA_CSV = os.path.join(DATA_DIR, "x_data_cleaned.csv")
-NETWORK_JSON = os.path.join(DATA_DIR, "actor_network.json")
+# Phase 6.5 rebuild: the Actor Network tab reads the typed, weighted
+# network (actor_network_v2.json, from build_network_v2.py) plus real
+# networkx centrality metrics (actor_centrality.csv), both rebuilt by
+# run_pipeline.py on every scheduled cycle.
+NETWORK_V2_JSON = os.path.join(DATA_DIR, "actor_network_v2.json")
+CENTRALITY_CSV = os.path.join(DATA_DIR, "actor_centrality.csv")
 TIMELINE_CSV = os.path.join(DATA_DIR, "daily_actor_timeline.csv")
 GDELT_TIMELINE_CSV = os.path.join(DATA_DIR, "daily_gdelt_timeline.csv")
 HASHTAG_FREQ_CSV = os.path.join(DATA_DIR, "hashtag_frequency.csv")
-ACTOR_FREQ_DEDUP_CSV = os.path.join(DATA_DIR, "actor_frequency_deduped.csv")
-ACTOR_COOCCUR_DEDUP_CSV = os.path.join(DATA_DIR, "actor_cooccurrence_deduped.csv")
 
-# The full quick-refresh chain now runs as an independent background
-# process (refresh_worker.py) instead of inline here - see the "Refresh
-# Data pipeline" section below for why (non-blocking + no timeout).
-FETCH_X_SCRIPT = os.path.join(DATA_DIR, "fetch_x_data.py")
-CLEAN_SCRIPT = os.path.join(DATA_DIR, "clean_x_data.py")
-PREPROCESS_SCRIPT = os.path.join(DATA_DIR, "preprocess_x_text.py")
-HASHTAGS_SCRIPT = os.path.join(DATA_DIR, "extract_topics_hashtags.py")
-ACTOR_MENTIONS_SCRIPT = os.path.join(DATA_DIR, "extract_actor_mentions.py")
-SENTIMENT_SCRIPT = os.path.join(DATA_DIR, "add_sentiment.py")
-DEDUPE_SCRIPT = os.path.join(DATA_DIR, "dedupe_actor_cooccurrence.py")
-NETWORK_SCRIPT = os.path.join(DATA_DIR, "build_actor_network.py")
-TIMELINE_SCRIPT = os.path.join(DATA_DIR, "build_daily_timelines.py")
-REFRESH_WORKER_SCRIPT = os.path.join(DATA_DIR, "refresh_worker.py")
-REFRESH_LOG = os.path.join(DATA_DIR, "refresh_progress.log")
-REFRESH_LOCK = os.path.join(DATA_DIR, "refresh.lock")
-
-DONE_RE = re.compile(r"REFRESH_DONE:(success|nochange|error):(.*)", re.DOTALL)
+# Written by run_pipeline.py (NOT by this dashboard) at the end of every
+# scheduled run - see that script's write_status_log(). This is the ONLY
+# source used for the "Data last updated" header below; deliberately not
+# any single file's mtime, which could be misleading if a step partially
+# failed (e.g. clean_x_data.py's output mtime would look "fresh" even on a
+# cycle where relation extraction was skipped for a Groq quota wall).
+PIPELINE_STATUS_LOG = os.path.join(DATA_DIR, "pipeline_status.log")
+# PIPE-separated, not colon-separated: the ISO timestamp field itself
+# contains colons (e.g. "2026-09-06T18:01:14Z"), which broke an earlier
+# colon-delimited version of this regex - caught by actually rendering the
+# dashboard against a sample log, not just eyeballing the format. Must
+# match run_pipeline.py's write_status_log() line-for-line.
+PIPELINE_RUN_RE = re.compile(r"PIPELINE_RUN\|([^|]+)\|([^|]+)\|(.*)")
 
 ACTORS = ["Iran", "Pakistan", "Saudi Arabia", "United States", "Turkiye"]
+
+# One fixed color per actor, used everywhere an actor needs a consistent
+# identity across charts (Timeline lines, summary-strip accents) - a muted,
+# desaturated qualitative set chosen deliberately (not a plotting library's
+# default categorical palette), so the same actor reads the same color no
+# matter which tab or which subset of actors is currently selected.
+ACTOR_COLORS = {
+    "Iran": "#b25142",
+    "Pakistan": "#3f7d5c",
+    "Saudi Arabia": "#a9852f",
+    "United States": "#3c6e8f",
+    "Turkiye": "#7a5a95",
+}
+
+# Edge color, by dominant_relation_type, for the Actor Network tab. "unclear"
+# has its own muted fallback color (distinct from neutral-reporting's gray)
+# in case it's ever the dominant type for a pair - in the current data it
+# never is (every one of the 10 pairs' dominant type is either
+# neutral-reporting or hostile), but the mapping stays defensive for
+# whenever the underlying data changes on a future relation-extraction run.
+RELATION_TYPE_COLORS = {
+    "hostile": "#b23a3a",           # muted red
+    "supportive": "#3f7d5c",        # muted green
+    "neutral-reporting": "#8a8a8a",  # gray
+    "skeptical": "#c1852f",         # muted amber
+    "mediating": "#7a5a95",         # muted plum
+    "unclear": "#c9b8a8",           # muted fallback, not used by current data
+}
+# Display/legend order - "unclear" last since it's the fallback bucket.
+RELATION_TYPE_ORDER = ["hostile", "supportive", "skeptical", "neutral-reporting", "mediating", "unclear"]
+
+# Shared chart palette - matches the page's warm-paper background (see
+# .streamlit/config.toml) instead of plotly's default stark white, so every
+# chart reads as part of the same designed page rather than a plotted-on-
+# white-canvas insert. INK is the same near-black-but-warm tone used for
+# body text; PLOT_GRID is a soft warm gray, never plotly's default light-blue-gray.
+PLOT_BG = "#faf8f5"
+PLOT_GRID = "#e3dcce"
+INK = "#2b2621"
+
+
+def _style_fig(fig, legend=True):
+    """Applied to every plotly figure right before st.plotly_chart, so chart
+    background/gridlines/font stay consistent across all 4 charts instead of
+    each one carrying plotly's un-themed defaults (stark white canvas, gray
+    sans-serif axis labels) that read as a mismatched insert on the page."""
+    fig.update_layout(
+        paper_bgcolor=PLOT_BG,
+        plot_bgcolor=PLOT_BG,
+        font=dict(family="IBM Plex Sans, sans-serif", color=INK, size=13),
+    )
+    # Only touch title_font when a title is actually set - setting it
+    # unconditionally on a figure with no title (e.g. the Actor Network
+    # graph, which has none) made plotly.js render a literal bold
+    # "undefined" string above the chart, caught during the smoke test below.
+    if fig.layout.title is not None and fig.layout.title.text:
+        fig.update_layout(title_font=dict(family="Source Serif 4, Georgia, serif", size=16, color=INK))
+    fig.update_xaxes(gridcolor=PLOT_GRID, zerolinecolor=PLOT_GRID)
+    fig.update_yaxes(gridcolor=PLOT_GRID, zerolinecolor=PLOT_GRID)
+    return fig
 # A couple of stray pre-pact outlier posts (e.g. a 2023 tweet, an old retweet
 # surfaced by keyword search) can appear in the raw data with dates far
 # before the pact existed. They're kept in the underlying CSVs (no rows are
 # dropped from the data itself), but a timeline chart spanning "2023 to now"
 # would crush the actual Aug 7-17 window into a sliver - so charts default to
 # this floor, with a caption noting anything excluded from the view.
+# Shown under every Pearson-r stat on the page, so "what does r mean" is
+# answered right where the number is, not only in a hover tooltip - kept to
+# one calm line per the "no long notes" rule.
+R_EXPLAINER = "r ranges from -1 to +1 - near 0 means little/no linear relationship, near +1 or -1 means a strong one."
+
 CHART_MIN_DATE = pd.Timestamp("2026-08-01").date()
 # The pact's actual signing date is a fixed historical fact, not something
 # that changes as more data comes in - unlike spike dates (see the Timeline
@@ -75,6 +153,93 @@ CHART_MIN_DATE = pd.Timestamp("2026-08-01").date()
 SIGNING_DATE = pd.Timestamp("2026-08-07").date()
 
 st.set_page_config(page_title="Makkah Pact Monitor", layout="wide")
+
+# --------------------------------------------------------------------------
+# Visual system - one deliberate font/color pairing, applied once here,
+# rather than Streamlit's stock look. Source Serif 4 for headings (reads
+# as editorial/analytical, matches the subject matter) + IBM Plex Sans for
+# body/UI text (clean, neutral, highly legible at small chart-label sizes).
+# Also hides Streamlit's own chrome (hamburger menu, "Made with Streamlit"
+# footer) so the page reads as a finished product, not a generic tool
+# shell. No gradients, no card shadows, no uniform rounded-corner grid -
+# structure comes from whitespace and thin rules instead.
+# --------------------------------------------------------------------------
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    }
+    h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        font-family: 'Source Serif 4', Georgia, serif;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: #2b2621;
+    }
+    h1 {
+        font-size: 2.1rem !important;
+        padding-bottom: 0.3em;
+        border-bottom: 3px solid #1f5f5b;
+        display: inline-block;
+    }
+
+    #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
+
+    div[data-testid="stMetricValue"] {
+        font-family: 'Source Serif 4', Georgia, serif;
+        font-weight: 600;
+        color: #2b2621;
+    }
+    div[data-testid="stMetricLabel"] {
+        font-size: 0.8rem;
+        color: #6b6b6b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    /* Tabs - a visible colored underline on the active tab instead of
+       Streamlit's default faint gray indicator, so the current section
+       reads clearly as "selected" rather than the whole bar looking flat. */
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-weight: 500;
+        color: #6b6b6b;
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        color: #1f5f5b;
+        font-weight: 600;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #1f5f5b;
+        height: 3px;
+    }
+
+    /* Buttons - a soft shadow + hover lift so interactive elements read as
+       clickable controls, not flat text-on-a-page (paired with the teal
+       accent color set in .streamlit/config.toml's primaryColor). */
+    .stButton button, .stDownloadButton button {
+        box-shadow: 0 1px 3px rgba(43, 38, 33, 0.18);
+        transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    .stButton button:hover, .stDownloadButton button:hover {
+        box-shadow: 0 4px 10px rgba(43, 38, 33, 0.22);
+        transform: translateY(-1px);
+    }
+
+    .finding-callout {
+        border-left: 3px solid #1f5f5b;
+        padding: 0.7em 1em;
+        margin: 0.6em 0;
+        background: #f0ece3;
+        border-radius: 0 4px 4px 0;
+    }
+    .finding-callout strong { font-family: 'Source Serif 4', Georgia, serif; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # --------------------------------------------------------------------------
@@ -106,7 +271,7 @@ OPTIONAL_STAGE_COLUMNS = {
     "confirmed_flag": None, "clean_text": "", "clean_text_lemmatized": "",
     "long_form_excerpt": "", "hashtags_extracted": "", "actor_match_diff": "",
     "actor_match_verified": None, "actors_mentioned": "",
-    "sentiment_score": None, "sentiment_label": "",
+    "sentiment_score": None, "sentiment_label": "", "topic_relevant": None,
 }
 
 
@@ -131,10 +296,23 @@ def load_x_data():
 
 
 @st.cache_data
-def load_network(mtime):
+def load_network_v2(mtime):
+    # encoding="utf-8" is required here, not optional: build_network_v2.py
+    # writes this file with encoding="utf-8" and it contains non-ASCII bytes
+    # (curly quotes, em-dashes, emoji in the raw post text under
+    # mediating_relations). Without an explicit encoding, Python's open()
+    # falls back to locale.getpreferredencoding() - on Windows that's the
+    # system codepage (cp1252, reported as "charmap"), not UTF-8 - which
+    # raises UnicodeDecodeError on those bytes. This is exactly what happened
+    # when this was first shipped without the encoding= argument.
     import json
-    with open(NETWORK_JSON) as f:
+    with open(NETWORK_V2_JSON, encoding="utf-8") as f:
         return json.load(f)
+
+
+@st.cache_data
+def load_centrality(mtime):
+    return pd.read_csv(CENTRALITY_CSV)
 
 
 @st.cache_data
@@ -156,90 +334,45 @@ def load_hashtag_freq(mtime):
     return pd.read_csv(HASHTAG_FREQ_CSV)
 
 
-# --------------------------------------------------------------------------
-# Refresh Data pipeline - NON-BLOCKING.
-#
-# The whole fetch->clean->preprocess->...->timeline chain used to run
-# SYNCHRONOUSLY inside this button's click handler (subprocess.run(),
-# which blocks until each step finishes). That froze the entire page for
-# however long the chain took, and a fixed 900s timeout on top of that
-# could cut off a legitimately slow step (the X fetch has deliberate
-# rate-limit delays) - which is what caused a real refresh to time out.
-#
-# Fix: the button now launches refresh_worker.py as an independent
-# background process via subprocess.Popen() (does NOT wait for it) and
-# immediately returns control to Streamlit. All status after that comes
-# from two plain files refresh_worker.py writes:
-#   refresh.lock         - exists while a refresh is in progress (deleted
-#                           by the worker when it finishes, success or not)
-#   refresh_progress.log - live progress text, appended to as each step
-#                           runs; ends with one REFRESH_DONE:... line
-# Reading files instead of relying on Streamlit session state means "is a
-# refresh running" is visible correctly even from a fresh page load or a
-# different browser tab - not just the tab that clicked the button.
-#
-# The polling loop below (time.sleep + st.rerun) reruns this script every
-# ~2.5s while a refresh is in progress. Each rerun only costs ~2.5s of
-# wait, not the length of the whole pipeline - so the page keeps repainting
-# and stays interactive between polls, instead of hanging on one giant
-# blocking call. The actual heavy work happens entirely in the separate
-# refresh_worker.py OS process, which has no timeout at all.
-# --------------------------------------------------------------------------
-
-def _read_text_if_exists(path):
-    if os.path.exists(path):
-        with open(path) as f:
-            return f.read()
-    return None
+@st.cache_data
+def load_pipeline_status(mtime):
+    """Parse the LAST 'PIPELINE_RUN|<iso>|<status>|<note>' line written by
+    run_pipeline.py (see that script's write_status_log()). Returns None if
+    the log doesn't exist yet (run_pipeline.py has never run) or has no
+    parseable line in it. Only that one line is read for this - not any
+    file's mtime - so a partially-failed run is never silently reported as
+    if everything succeeded."""
+    if not os.path.exists(PIPELINE_STATUS_LOG):
+        return None
+    with open(PIPELINE_STATUS_LOG, encoding="utf-8") as f:
+        text = f.read()
+    matches = PIPELINE_RUN_RE.findall(text)
+    if not matches:
+        return None
+    iso_ts, status, note = matches[-1]  # last run in the file wins
+    try:
+        dt = datetime.strptime(iso_ts, "%Y-%m-%dT%H:%M:%SZ")
+        display_ts = dt.strftime("%Y-%m-%d %H:%M UTC")
+    except ValueError:
+        display_ts = iso_ts
+    return {"timestamp": display_ts, "status": status, "note": note.strip()}
 
 
-def _launch_refresh():
-    """Start refresh_worker.py in the background and return immediately -
-    does not wait for it. `-u` keeps the worker's own prints unbuffered so
-    they reach the log file promptly instead of sitting in a block buffer."""
-    with open(REFRESH_LOG, "w"):
-        pass  # truncate any old log from a previous run
-    log_fh = open(REFRESH_LOG, "a")
-    subprocess.Popen(
-        [sys.executable, "-u", REFRESH_WORKER_SCRIPT],
-        cwd=DATA_DIR,
-        stdout=log_fh,
-        stderr=subprocess.STDOUT,
-    )
-
-
-def _refresh_status():
-    """('running' | 'done' | 'idle', log_text, done_status, done_detail).
-    Driven entirely by the lock file + log file, not session state, so it
-    reads correctly from any tab/session, not just the one that clicked
-    Refresh Data."""
-    log_text = _read_text_if_exists(REFRESH_LOG) or ""
-    m = DONE_RE.search(log_text)
-    if m:
-        return "done", log_text, m.group(1), m.group(2).strip()
-    if os.path.exists(REFRESH_LOCK):
-        return "running", log_text, None, None
-    return "idle", log_text, None, None
+# (refresh_worker.py, refresh.lock, refresh_progress.log, the REFRESH_DONE
+# sentinel, and the live-progress polling loop all lived here before this
+# rewrite - all of that now lives, in spirit, inside run_pipeline.py, which
+# runs completely independently of whether this dashboard is even open.)
 
 
 # --------------------------------------------------------------------------
-# Header: title, last-updated timestamp, Refresh Data button
+# Header: title, "Data last updated" (from run_pipeline.py's status log),
+# and a "Check for updates" button that only clears the cache and reruns -
+# no subprocess, no fetching, no blocking.
 # --------------------------------------------------------------------------
 
 st.title("Makkah / Mecca Joint Defence Pact — Social & News Monitor")
 
-refresh_status, refresh_log_text, done_status, done_detail = _refresh_status()
-if refresh_status == "done":
-    # Clear the cache (and consume the log) BEFORE loading data below, so
-    # this same render already shows fresh data next to the completion
-    # banner - no extra rerun/flicker needed.
-    st.cache_data.clear()
-    try:
-        os.remove(REFRESH_LOG)
-    except OSError:
-        pass
-
-df, x_mtime = load_x_data()
+df, _x_mtime = load_x_data()  # mtime only used to bust _load_x_data's cache key; "Data last updated" below comes from pipeline_status.log instead, not this file's mtime
 en_df = df[df["detected_language"] == "en"].copy()
 # The 12 manually-confirmed slur/harassment rows are excluded from display
 # everywhere in this dashboard, not just the explorer table - per the
@@ -268,87 +401,91 @@ if _en_total:
     _sentiment_missing = int(en_df_safe["sentiment_score"].isna().sum())
     _actors_missing = int((en_df_safe["actors_mentioned"].fillna("").astype(str).str.strip() == "").sum())
     _incomplete = max(_sentiment_missing, _actors_missing)
+    # Kept deliberately short and calm in the UI - the full mechanism (why
+    # this happens, exactly which scripts to re-run) lives in
+    # CLAUDE_INVESTIGATION_LOG.md for whoever's maintaining the pipeline;
+    # a dashboard visitor just needs to know the numbers below are partial
+    # right now, not a wall of internal pipeline diagnostics.
     if _incomplete == _en_total:
-        st.error(
-            "⚠️ **This data hasn't finished processing.** None of the "
-            f"{_en_total} English post(s) have sentiment or actor-mention "
-            "analysis yet - the Sentiment & Engagement tab will be empty and "
-            "every Data Explorer filter will return 0 results until this is "
-            "fixed. This happens when `clean_x_data.py` was run by itself "
-            "without the rest of the chain after it (it rebuilds "
-            "x_data_cleaned.csv from scratch, which clears those columns "
-            "until preprocess/hashtags/actor-mentions/sentiment re-add them). "
-            "**Fix:** click 🔄 Refresh Data above (it runs the full chain in "
-            "order), or if you're running scripts by hand, run them in this "
-            "order after clean_x_data.py: preprocess_x_text.py -> "
-            "extract_topics_hashtags.py -> extract_actor_mentions.py -> "
-            "add_sentiment.py."
-        )
+        st.info("Analysis is still processing for this data - charts will populate on the next scheduled update.")
     elif _incomplete > 0:
-        st.warning(
-            f"⚠️ {_incomplete} of {_en_total} English post(s) are missing "
-            "sentiment/actor-mention analysis (likely rows added since the "
-            "last full pipeline run). Charts below reflect only the "
-            f"{_en_total - _incomplete} fully-processed post(s) - click 🔄 "
-            "Refresh Data above to catch the rest up."
-        )
+        st.caption(f"{_en_total - _incomplete} of {_en_total} posts fully processed; the rest will catch up on the next update.")
+
+pipeline_status = load_pipeline_status(
+    os.path.getmtime(PIPELINE_STATUS_LOG) if os.path.exists(PIPELINE_STATUS_LOG) else 0
+)
 
 header_left, header_right = st.columns([3, 1])
 with header_left:
-    last_updated = datetime.fromtimestamp(x_mtime).strftime("%Y-%m-%d %H:%M:%S")
-    st.caption(f"Data last updated: {last_updated}")
+    if pipeline_status is None:
+        st.caption("Data last updated: unknown")
+    else:
+        status_word = {"success": "", "partial": " (partial update)", "failed": ""}.get(
+            pipeline_status["status"], ""
+        )
+        st.caption(f"Data last updated: {pipeline_status['timestamp']}{status_word}")
 with header_right:
-    st.caption(
-        "⚠️ Fetches only the last few days (small, fast pull), then re-cleans/"
-        "re-scores the pipeline in the background - the page stays usable "
-        "while it runs."
-    )
-    if refresh_status == "running":
-        st.button("🔄 Refreshing…", disabled=True, width='stretch')
-    else:
-        if st.button("🔄 Refresh Data", width='stretch'):
-            missing_scripts = [
-                p for p in [
-                    REFRESH_WORKER_SCRIPT, FETCH_X_SCRIPT, CLEAN_SCRIPT, PREPROCESS_SCRIPT,
-                    HASHTAGS_SCRIPT, ACTOR_MENTIONS_SCRIPT, SENTIMENT_SCRIPT, DEDUPE_SCRIPT,
-                    NETWORK_SCRIPT, TIMELINE_SCRIPT,
-                ] if not os.path.exists(p)
-            ]
-            if missing_scripts:
-                st.error("Can't find: " + ", ".join(os.path.basename(p) for p in missing_scripts))
-            else:
-                _launch_refresh()
-                st.rerun()
-
-if refresh_status == "running":
-    st.info(
-        "🔄 Refresh running in the background — this page updates automatically "
-        "every ~2-3s. Everything below is still the last-loaded data - browse "
-        "away, it'll swap in as soon as the refresh finishes."
-    )
-    with st.expander("Live progress log", expanded=True):
-        st.code(refresh_log_text[-3000:] or "Starting…", language=None)
-    # NOTE: the actual "wait then poll again" call is at the very BOTTOM of
-    # this file, after every tab has rendered - not here. st.rerun() halts
-    # the script immediately, so if it were called at this point (before the
-    # tabs below), the tabs would never even run and the whole rest of the
-    # page would just vanish while a refresh was in progress - which is
-    # exactly the bug this comment is here to prevent reintroducing.
-
-elif refresh_status == "done":
-    # Cache was already cleared and the log already removed above (before
-    # df was loaded), so the charts below are already showing fresh data
-    # in this same render - this banner just reports what happened.
-    if done_status == "success":
-        st.success(f"Refresh complete — {done_detail}")
-    elif done_status == "nochange":
-        st.info(f"Refresh finished — {done_detail}")
-    else:
-        st.error(f"Refresh failed — {done_detail}")
-        with st.expander("Full log"):
-            st.code(refresh_log_text[-4000:], language=None)
+    if st.button(
+        "Check for updates", width='stretch',
+        help="Reloads the current data from disk - collection itself runs on its own schedule.",
+    ):
+        st.cache_data.clear()
+        st.rerun()
 
 st.divider()
+
+# --------------------------------------------------------------------------
+# At-a-glance summary strip - the numbers a reader needs before opening any
+# tab: how much data, over what window, and which actor stands out on the
+# two metrics every other tab elaborates on. Deliberately a plain stat row
+# (no boxed cards/shadows) - the whitespace and thin dividers below do the
+# separating.
+# --------------------------------------------------------------------------
+_glance_df = en_df_safe[
+    (en_df_safe["topic_relevant"] == True)  # noqa: E712
+    & (en_df_safe["date"] >= CHART_MIN_DATE)
+]
+# Fixed 2026-09-10: this used to run over every topic_relevant==True row with
+# no date floor, so a single stray pre-pact outlier (a real Sept 2025 post
+# about a related Saudi-Pakistan defense agreement, correctly keyword-matched
+# but a year before this pact existed) became the computed "earliest" date -
+# producing an impossible-looking "Sep 19 - Sep 9" range once the year was
+# dropped from the display. The Timeline tab already excludes exactly this
+# class of outlier via CHART_MIN_DATE (see that constant's own comment above)
+# - this now applies the same floor here, so the two tell a consistent story
+# instead of just the Timeline tab being right.
+if len(_glance_df):
+    _mention_counts = {a: _glance_df["actors_list"].apply(lambda lst: a in lst).sum() for a in ACTORS}
+    _top_actor = max(_mention_counts, key=_mention_counts.get)
+    _sent_by_actor = {
+        a: _glance_df.loc[_glance_df["actors_list"].apply(lambda lst: a in lst), "sentiment_score"].mean()
+        for a in ACTORS
+    }
+    _sent_by_actor = {a: v for a, v in _sent_by_actor.items() if pd.notna(v)}
+    _date_min, _date_max = _glance_df["date"].min(), _glance_df["date"].max()
+
+    # Portable "Aug 7" formatting (not strftime("%-d") - that flag is spelled
+    # differently on Windows ("%#d") and raises ValueError on the wrong OS;
+    # see the Timeline tab's own _fmt_date for the same fix, applied there).
+    # Includes the year only if the range actually spans more than one -
+    # defensive against a future collection window crossing a year boundary,
+    # even though the CHART_MIN_DATE floor above keeps today's range within one.
+    def _fmt_short(d, with_year=False):
+        base = f"{d.strftime('%b')} {d.day}"
+        return f"{base}, {d.year}" if with_year else base
+
+    _cross_year = _date_min.year != _date_max.year
+    g1, g2, g3, g4 = st.columns(4)
+    g1.metric("Topic-relevant posts", f"{len(_glance_df):,}")
+    g2.metric(
+        "Collection window",
+        f"{_fmt_short(_date_min, _cross_year)} – {_fmt_short(_date_max, _cross_year)}",
+    )
+    g3.metric("Most-mentioned actor", _top_actor, help=f"{_mention_counts[_top_actor]:,} mentions")
+    if _sent_by_actor:
+        _most_pos = max(_sent_by_actor, key=_sent_by_actor.get)
+        g4.metric("Most positive sentiment", _most_pos, help=f"avg {_sent_by_actor[_most_pos]:.2f}")
+    st.divider()
 
 tab_network, tab_timeline, tab_sentiment, tab_hashtags, tab_explorer = st.tabs(
     ["Actor Network", "Timeline", "Sentiment & Engagement", "Hashtags", "Data Explorer"]
@@ -360,23 +497,47 @@ tab_network, tab_timeline, tab_sentiment, tab_hashtags, tab_explorer = st.tabs(
 # --------------------------------------------------------------------------
 
 with tab_network:
-    st.subheader("Actor co-mention network")
+    st.subheader("Actor relationship network")
     st.caption(
-        "Node size = deduplicated mention count (each near-duplicate/repost cluster "
-        "counted once). Edge thickness and color = deduplicated co-occurrence count "
-        "between that pair of actors."
+        "Node size = how often that actor appears in an extracted relation. Edge thickness "
+        "= relation count for that pair; edge color = the pair's most common relation type "
+        "(hover an edge for the full breakdown).",
+        help="Relation types are extracted per-post by an LLM classifier, not inferred from "
+             "co-occurrence - two actors mentioned in the same post are only linked here if "
+             "the post actually describes a relationship between them."
     )
 
-    if not os.path.exists(NETWORK_JSON):
-        st.warning(f"{os.path.basename(NETWORK_JSON)} not found.")
+    if not os.path.exists(NETWORK_V2_JSON) or not os.path.exists(CENTRALITY_CSV):
+        missing = [os.path.basename(p) for p in (NETWORK_V2_JSON, CENTRALITY_CSV) if not os.path.exists(p)]
+        st.warning(
+            f"Missing: {', '.join(missing)}. Run build_network_v2.py (needs actor_relations.csv "
+            "from a completed relation-extraction pass) to generate them."
+        )
     else:
-        network = load_network(os.path.getmtime(NETWORK_JSON))
-        nodes = network["nodes"]
-        edges = network["edges"]
+        network_v2 = load_network_v2(os.path.getmtime(NETWORK_V2_JSON))
+        centrality_df = load_centrality(os.path.getmtime(CENTRALITY_CSV))
+        nodes = network_v2["nodes"]
+        edges = network_v2["edges"]
+
+        def _pair_edge(a, b):
+            key = tuple(sorted([a, b]))
+            for e in edges:
+                if tuple(sorted([e["source"], e["target"]])) == key:
+                    return e
+            return None
+
+        def _format_breakdown(e):
+            """'Iran-US: 108 total — 72 hostile, 32 neutral-reporting, 2 skeptical, 2
+            mediating, 0 supportive, 0 unclear' - all 6 types listed, highest count
+            first, zeros included, so the hover always shows the FULL breakdown."""
+            bd = e["relation_type_breakdown"]
+            parts = sorted(bd.items(), key=lambda kv: -kv[1])
+            breakdown_str = ", ".join(f"{v} {k}" for k, v in parts)
+            return f"{e['source']} – {e['target']}: {e['weight']} total — {breakdown_str}"
 
         G = nx.Graph()
         for n in nodes:
-            G.add_node(n["id"], size=n["size"])
+            G.add_node(n["id"], size=n["relation_row_involvement"])
         for e in edges:
             if e["weight"] > 0:
                 G.add_edge(e["source"], e["target"], weight=e["weight"])
@@ -385,25 +546,42 @@ with tab_network:
 
         max_weight = max((e["weight"] for e in edges), default=1) or 1
         edge_traces = []
+        dominant_types_present = set()
         for e in edges:
             if e["weight"] <= 0:
                 continue
             x0, y0 = pos[e["source"]]
             x1, y1 = pos[e["target"]]
             width = 1 + 7 * (e["weight"] / max_weight)
+            dom = e["dominant_relation_type"]
+            color = RELATION_TYPE_COLORS.get(dom, RELATION_TYPE_COLORS["unclear"])
+            dominant_types_present.add(dom)
             edge_traces.append(
                 go.Scatter(
                     x=[x0, x1],
                     y=[y0, y1],
                     mode="lines",
-                    line=dict(width=width, color="rgba(120,120,180,0.55)"),
+                    line=dict(width=width, color=color),
                     hoverinfo="text",
-                    text=f"{e['source']} – {e['target']}: {e['weight']}",
+                    text=_format_breakdown(e),
                     showlegend=False,
                 )
             )
 
-        sizes = [n["size"] for n in nodes]
+        # Zero-length dummy traces purely to give the color-by-dominant-type
+        # mapping a legend entry - only for types actually dominant on at
+        # least one of the 10 edges, so the legend doesn't list colors that
+        # never appear.
+        legend_traces = [
+            go.Scatter(
+                x=[None], y=[None], mode="lines",
+                line=dict(width=4, color=RELATION_TYPE_COLORS.get(rtype, RELATION_TYPE_COLORS["unclear"])),
+                name=rtype, showlegend=True, hoverinfo="skip",
+            )
+            for rtype in RELATION_TYPE_ORDER if rtype in dominant_types_present
+        ]
+
+        sizes = [n["relation_row_involvement"] for n in nodes]
         min_size, max_size = min(sizes), max(sizes)
 
         def scale_node_size(v):
@@ -417,31 +595,114 @@ with tab_network:
             mode="markers+text",
             text=[n["label"] for n in nodes],
             textposition="top center",
-            hovertext=[f"{n['label']}: {n['size']} mentions" for n in nodes],
+            hovertext=[f"{n['label']}: {n['relation_row_involvement']} relation-row involvement" for n in nodes],
             hoverinfo="text",
             marker=dict(
-                size=[scale_node_size(n["size"]) for n in nodes],
+                size=[scale_node_size(n["relation_row_involvement"]) for n in nodes],
                 color=sizes,
-                colorscale="Blues",
+                # Fixed 2026-09-10: plotly's stock "Blues" scale runs light-to-
+                # dark, so a lower-involvement actor's node fill lands near-
+                # white and all but disappears against a light page background
+                # (this is what made Iran/United States hard to see - their
+                # involvement values happen to sit at the pale end of the
+                # scale). A custom 2-stop scale that never reaches white fixes
+                # that regardless of which actor's value is lowest.
+                colorscale=[[0, "#a9c9d6"], [1, "#1b4f72"]],
                 showscale=False,
-                line=dict(width=1.5, color="white"),
+                # Each node's OUTLINE is that actor's fixed identity color
+                # (same ACTOR_COLORS used on the Timeline chart) - this is
+                # what actually guarantees every node reads clearly no matter
+                # how light or dark its fill lands on the involvement scale,
+                # and it ties this chart into the same color system as the
+                # rest of the dashboard instead of using an unrelated palette.
+                line=dict(width=3, color=[ACTOR_COLORS.get(n["id"], INK) for n in nodes]),
             ),
             showlegend=False,
         )
 
-        fig = go.Figure(data=edge_traces + [node_trace])
+        fig = go.Figure(data=edge_traces + legend_traces + [node_trace])
         fig.update_layout(
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
-            height=520,
-            margin=dict(l=10, r=10, t=10, b=10),
-            plot_bgcolor="white",
+            height=540,
+            margin=dict(l=10, r=10, t=10, b=40),
+            legend=dict(
+                orientation="h", yanchor="top", y=-0.05, xanchor="center", x=0.5,
+                title=dict(text="Edge color = dominant relation type: "),
+            ),
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(_style_fig(fig), width='stretch')
 
-        with st.expander("Edge weights (all 10 pairs)"):
-            edge_df = pd.DataFrame(edges).sort_values("weight", ascending=False)
-            st.dataframe(edge_df, width='stretch', hide_index=True)
+        graph_col, centrality_col = st.columns([3, 2])
+
+        with graph_col:
+            with st.expander("Edge breakdown (all 10 pairs)"):
+                edge_rows = []
+                for e in sorted(edges, key=lambda e: -e["weight"]):
+                    row = {
+                        "pair": f"{e['source']} – {e['target']}",
+                        "weight": e["weight"],
+                        "dominant_relation_type": e["dominant_relation_type"],
+                    }
+                    row.update(e["relation_type_breakdown"])
+                    edge_rows.append(row)
+                st.dataframe(pd.DataFrame(edge_rows), width='stretch', hide_index=True)
+
+        with centrality_col:
+            st.markdown("**Centrality rankings** (degree = weighted node strength)")
+            st.dataframe(
+                centrality_df.sort_values("degree_centrality", ascending=False),
+                width='stretch',
+                hide_index=True,
+            )
+            st.caption(
+                "Betweenness is 0.0 for every actor - expected, since all 10 pairs already "
+                "have a direct relation, so no third actor sits \"between\" any two others.",
+                help="The network is a complete graph: every actor pair has at least one "
+                     "extracted relation, so the shortest path between any two actors is "
+                     "always that direct edge.",
+            )
+
+        # ---- Mediating callout: computed for all 5 actors uniformly, names ----
+        # ---- whichever one(s) actually show mediating activity ----
+        # Fixed 2026-09-10: this used to hardcode Pakistan-Iran and
+        # Pakistan-United States as the only pairs checked, so it always
+        # named the same actor regardless of what the data said. Now it sums
+        # each actor's mediating-relation involvement across every edge that
+        # touches them, and names whichever actor's involvement is highest -
+        # currently Pakistan, because that's what the extracted relations
+        # actually show, not because the code singles Pakistan out.
+        mediating_pairs = [
+            (e, e["relation_type_breakdown"].get("mediating", 0))
+            for e in edges
+            if e["relation_type_breakdown"].get("mediating", 0) > 0
+        ]
+        if mediating_pairs:
+            mediating_by_actor = {a: 0 for a in ACTORS}
+            for e, c in mediating_pairs:
+                mediating_by_actor[e["source"]] += c
+                mediating_by_actor[e["target"]] += c
+            top_mediator = max(mediating_by_actor, key=mediating_by_actor.get)
+            top_count = mediating_by_actor[top_mediator]
+            per_partner = [
+                f"{c} with {(e['target'] if e['source'] == top_mediator else e['source'])}"
+                for e, c in mediating_pairs if top_mediator in (e["source"], e["target"])
+            ]
+            plural = "s" if top_count != 1 else ""
+            st.markdown(
+                f"""<div class="finding-callout">
+                <strong>{top_mediator} mediating other actors' relations</strong> ({top_count} instance{plural})<br>
+                {', '.join(per_partner)} mediating-typed relation(s), extracted from post text
+                describing {top_mediator} as a go-between rather than a direct party.
+                </div>""",
+                unsafe_allow_html=True,
+            )
+            total_mediating = sum(c for _, c in mediating_pairs)
+            other_mediating = total_mediating - top_count
+            if other_mediating:
+                st.caption(f"{other_mediating} additional mediating relation(s) elsewhere in the data.")
+        else:
+            st.caption("No mediating-type relations identified in the current data.")
 
 
 # --------------------------------------------------------------------------
@@ -469,8 +730,7 @@ with tab_timeline:
             show_gdelt = st.checkbox(
                 "Overlay GDELT article volume (secondary source, right axis)",
                 value=False,
-                help="GDELT coverage in this dataset may not cover all 5 actors or "
-                     "the full date range - see the Timeline note below the chart.",
+                help="GDELT is a supporting source; coverage may not span all actors or dates.",
             )
 
         fig = go.Figure()
@@ -479,6 +739,8 @@ with tab_timeline:
                 fig.add_trace(go.Scatter(
                     x=timeline["date"], y=timeline[actor],
                     mode="lines+markers", name=actor,
+                    line=dict(color=ACTOR_COLORS.get(actor)),
+                    marker=dict(color=ACTOR_COLORS.get(actor)),
                 ))
         if show_total:
             fig.add_trace(go.Scatter(
@@ -538,7 +800,7 @@ with tab_timeline:
             legend=dict(orientation="h", yanchor="bottom", y=1.02),
             margin=dict(l=10, r=10, t=40, b=10),
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(_style_fig(fig), width='stretch')
 
         if spike_dates:
             spike_list = ", ".join(_fmt_date(d) for d in spike_dates)
@@ -554,20 +816,36 @@ with tab_timeline:
         else:
             caption = "No volume spikes flagged in the current collection window (posts/day > mean + 1 stdev)."
         if n_excluded:
-            caption += (
-                f" ({n_excluded} stray pre-pact outlier date(s) before {CHART_MIN_DATE} "
-                "are excluded from this chart's view - they're still in daily_actor_timeline.csv.)"
-            )
+            caption += f" ({n_excluded} earlier outlier date(s) excluded from view.)"
         st.caption(caption)
+
+        # Correlation between daily X-mention volume and daily GDELT article
+        # volume, on dates both sources actually cover - a real Pearson r,
+        # not just the visual overlay above. Needs at least a handful of
+        # overlapping dates with some variation in both series to mean
+        # anything; below that it's silently omitted rather than shown with
+        # a caveat paragraph attached.
+        #
+        # GDELT is a supplementary cross-check, never the analysis itself -
+        # the project's required correlation work is entirely X-native (see
+        # the Sentiment tab's sentiment-vs-engagement r below, computed only
+        # from X data). Labeled "secondary source" here for the same reason
+        # the overlay checkbox above already is - and fetch_gdelt.py is a
+        # one-time historical backfill (Aug 7-14), not refreshed alongside
+        # ongoing X collection, so this r reflects that early window only,
+        # not the full collection period.
         if gdelt_available:
             gdelt_timeline = load_gdelt_timeline(os.path.getmtime(GDELT_TIMELINE_CSV))
-            covered = [a for a in ACTORS if a in gdelt_timeline.columns and gdelt_timeline[a].sum() > 0]
-            st.caption(
-                f"GDELT coverage in the current dataset: {', '.join(covered) if covered else 'none'}, "
-                f"{gdelt_timeline['date'].min()} to {gdelt_timeline['date'].max()}. "
-                "Treat GDELT-vs-X comparisons as illustrative only until GDELT coverage matches "
-                "the full actor/date range."
-            )
+            merged = timeline_full.merge(gdelt_timeline[["date", "total_articles"]], on="date", how="inner")
+            if len(merged) >= 5 and merged["total_posts"].std() > 0 and merged["total_articles"].std() > 0:
+                corr = merged["total_posts"].corr(merged["total_articles"])
+                st.metric(
+                    "X volume vs. GDELT volume correlation (secondary source)", f"r = {corr:.2f}",
+                    help=f"Pearson correlation over {len(merged)} overlapping day(s) between daily "
+                         "X post volume and daily GDELT article volume. GDELT is a supplementary "
+                         "cross-check on a limited early window, not the project's primary analysis.",
+                )
+                st.caption(R_EXPLAINER)
 
 
 # --------------------------------------------------------------------------
@@ -577,6 +855,28 @@ with tab_timeline:
 with tab_sentiment:
     st.subheader("Sentiment vs. engagement, per actor")
 
+    # Fixed 2026-09-10: this tab used to run its averages/charts over
+    # en_df_safe (every English, non-flagged row), which includes the
+    # ~11-12% of rows that are topic_relevant==False - posts that matched
+    # a search query but a later Groq pass confirmed aren't actually about
+    # the pact. This is what the professor was flagging as sentiment data
+    # that looked "not relevant or in line with the Mecca Pact." Scoped
+    # down to topic_relevant==True here, matching the same scoping fix
+    # applied at the source in add_sentiment.py (see that script's
+    # docstring for the full writeup and before/after numbers) - this tab
+    # is now reading numbers that were ALSO computed on that same narrower
+    # set (add_sentiment.py no longer computes sentiment_score for
+    # off-topic rows at all), so this filter is mostly a safety net for
+    # older data; the real fix is upstream.
+    sentiment_df = en_df_safe[en_df_safe["topic_relevant"] == True]  # noqa: E712 - exact True, excludes False AND NaN
+    _n_excluded_sentiment = len(en_df_safe) - len(sentiment_df)
+    if _n_excluded_sentiment > 0:
+        st.caption(
+            f"Scoped to {len(sentiment_df)} topic-relevant English post(s) "
+            f"(excludes {_n_excluded_sentiment} English post(s) that matched a "
+            "search term but were confirmed off-topic, or not yet classified)."
+        )
+
     # NOTE: sentiment_score/actors_mentioned always EXIST as columns by the
     # time data reaches here (see OPTIONAL_STAGE_COLUMNS in _load_x_data) -
     # so checking "column not in df" here would never actually catch a
@@ -585,16 +885,13 @@ with tab_sentiment:
     # tabs already checks and explains in detail; this is just the
     # tab-local fallback for the (should be rare) case someone lands here
     # with genuinely zero usable rows.
-    if en_df_safe.empty or en_df_safe["sentiment_score"].notna().sum() == 0:
-        st.warning(
-            "No processed sentiment data available yet for the current filters/dataset - "
-            "see the notice above the tabs, or click 🔄 Refresh Data."
-        )
+    if sentiment_df.empty or sentiment_df["sentiment_score"].notna().sum() == 0:
+        st.caption("No processed sentiment data available yet for this dataset.")
     else:
         rows = []
         for actor in ACTORS:
-            mask = en_df_safe["actors_list"].apply(lambda lst: actor in lst)
-            subset = en_df_safe[mask]
+            mask = sentiment_df["actors_list"].apply(lambda lst: actor in lst)
+            subset = sentiment_df[mask]
             rows.append({
                 "actor": actor,
                 "n_posts": len(subset),
@@ -613,37 +910,65 @@ with tab_sentiment:
                 range_color=[-0.3, 0.3],
             )
             fig_sent.update_layout(coloraxis_showscale=False, margin=dict(l=10, r=10, t=40, b=10))
-            st.plotly_chart(fig_sent, width='stretch')
+            st.plotly_chart(_style_fig(fig_sent), width='stretch')
         with col2:
             fig_eng = go.Figure()
-            fig_eng.add_trace(go.Bar(x=report_df["actor"], y=report_df["avg_likes"], name="Avg likes"))
-            fig_eng.add_trace(go.Bar(x=report_df["actor"], y=report_df["avg_retweets"], name="Avg retweets"))
+            fig_eng.add_trace(go.Bar(
+                x=report_df["actor"], y=report_df["avg_likes"], name="Avg likes",
+                marker_color="#1f5f5b",
+            ))
+            fig_eng.add_trace(go.Bar(
+                x=report_df["actor"], y=report_df["avg_retweets"], name="Avg retweets",
+                marker_color="#a9852f",
+            ))
             fig_eng.update_layout(
                 title="Average engagement by actor", barmode="group",
                 margin=dict(l=10, r=10, t=40, b=10),
             )
-            st.plotly_chart(fig_eng, width='stretch')
+            st.plotly_chart(_style_fig(fig_eng), width='stretch')
 
-        iran_row = report_df[report_df["actor"] == "Iran"].iloc[0]
-        is_lowest_sentiment = report_df["avg_sentiment"].idxmin() == iran_row.name
-        is_lowest_engagement = report_df["avg_likes"].idxmin() == iran_row.name
-        if is_lowest_sentiment and is_lowest_engagement:
-            st.info(
-                f"**Iran pattern:** Iran-related posts have the lowest average sentiment "
-                f"({iran_row['avg_sentiment']:.2f}, near-neutral) *and* the lowest average "
-                f"engagement ({iran_row['avg_likes']:.1f} likes, {iran_row['avg_retweets']:.1f} "
-                f"retweets) of all five actors - the other four actors cluster around "
-                f"0.20-0.28 average sentiment with meaningfully higher engagement."
+        # Correlation between sentiment and engagement at the individual-post
+        # level (topic-relevant subset) - a real Pearson r alongside the
+        # per-actor bar charts above, not just a visual side-by-side. Computed
+        # entirely from X data (sentiment_score + likes/retweets, both native
+        # to the collected posts) - this is the project's primary correlation
+        # result, independent of GDELT.
+        _corr_base = sentiment_df.dropna(subset=["sentiment_score"]).copy()
+        _corr_base["engagement"] = _corr_base["likes"].fillna(0) + _corr_base["retweets"].fillna(0)
+        if len(_corr_base) >= 5 and _corr_base["sentiment_score"].std() > 0 and _corr_base["engagement"].std() > 0:
+            sent_eng_corr = _corr_base["sentiment_score"].corr(_corr_base["engagement"])
+            st.metric(
+                "Sentiment vs. engagement correlation", f"r = {sent_eng_corr:.2f}",
+                help=f"Pearson correlation between sentiment_score and (likes + retweets) "
+                     f"across {len(_corr_base):,} topic-relevant post(s), all from X data.",
             )
-        else:
-            st.caption(
-                "Note: the Iran lowest-sentiment/lowest-engagement pattern reported earlier "
-                "no longer holds with the current data - check the chart above for the current numbers."
+            st.caption(R_EXPLAINER)
+
+        # Fixed 2026-09-10: this used to hardcode "Iran" as the actor to check,
+        # so it only ever tested whether Iran specifically was lowest on both
+        # measures - if a different actor became lowest on both as new data
+        # came in, this callout would have silently stopped appearing instead
+        # of naming the actor the data actually points to. Now it finds
+        # whichever actor is lowest on each measure, across all five, and
+        # only fires (naming that actor) when the same one is lowest on both.
+        _low_sentiment_idx = report_df["avg_sentiment"].idxmin()
+        _low_engagement_idx = report_df["avg_likes"].idxmin()
+        if _low_sentiment_idx == _low_engagement_idx:
+            low_row = report_df.loc[_low_sentiment_idx]
+            st.markdown(
+                f"""<div class="finding-callout">
+                <strong>{low_row['actor']} pattern</strong><br>
+                {low_row['actor']}-related posts have both the lowest average sentiment
+                ({low_row['avg_sentiment']:.2f}) and lowest average engagement
+                ({low_row['avg_likes']:.1f} likes, {low_row['avg_retweets']:.1f} retweets) of
+                the five actors.
+                </div>""",
+                unsafe_allow_html=True,
             )
 
         st.divider()
-        st.caption("At the individual-post level (English subset), by sentiment label:")
-        by_label = en_df_safe.groupby("sentiment_label")[["likes", "retweets"]].mean().round(1)
+        st.caption("At the individual-post level (English + topic-relevant subset), by sentiment label:")
+        by_label = sentiment_df.groupby("sentiment_label")[["likes", "retweets"]].mean().round(1)
         st.dataframe(by_label, width='stretch')
 
 
@@ -665,11 +990,25 @@ with tab_hashtags:
             title="Top 15 hashtags by deduplicated count",
         )
         fig.update_layout(margin=dict(l=10, r=10, t=40, b=10), height=520)
-        st.plotly_chart(fig, width='stretch')
+        fig.update_traces(marker_color="#1f5f5b")
+        st.plotly_chart(_style_fig(fig), width='stretch')
         st.caption(
-            "\"Deduplicated count\" treats every post in the same near-duplicate/repost "
-            "cluster as one vote, so bot/aggregator clusters don't inflate a hashtag's rank."
+            "Deduplicated: near-duplicate/repost clusters count once, so bot clusters don't "
+            "inflate a hashtag's rank.",
+            help="Every post in the same near-duplicate/repost cluster contributes one vote, "
+                 "not one per post.",
         )
+        # Fixed 2026-09-10: hashtag_frequency.csv/hashtag_cooccurrence.csv are
+        # now built by extract_topics_hashtags.py from topic_relevant==True
+        # rows only (previously counted every English row) - same fix as
+        # Sentiment & Engagement's tab, applied to hashtags. This tab reads
+        # the CSV as-is, so surfacing the exclusion count here just makes
+        # that upstream scoping visible, not a second filter.
+        if "topic_relevant" in en_df_safe.columns:
+            _n_hashtag_relevant = int((en_df_safe["topic_relevant"] == True).sum())  # noqa: E712
+            _n_hashtag_excluded = len(en_df_safe) - _n_hashtag_relevant
+            if _n_hashtag_excluded > 0:
+                st.caption(f"Scoped to {_n_hashtag_relevant:,} topic-relevant post(s).")
 
 
 # --------------------------------------------------------------------------
@@ -722,27 +1061,7 @@ with tab_explorer:
         height=500,
     )
 
-
-# --------------------------------------------------------------------------
-# Refresh polling - MUST be the last thing in the script.
-#
-# This is deliberately placed here, after every tab above has fully
-# rendered, rather than up near the header where the "running" banner is
-# shown. st.rerun() halts script execution immediately - calling it right
-# after the banner (before the tabs ran) meant the whole rest of the page
-# (all 5 tabs, every chart) never rendered at all while a refresh was in
-# progress, so there was nothing left to "browse" despite the banner
-# saying you could. Putting the sleep+rerun down here instead means the
-# full page - header, banner, live log, and all tabs showing the
-# last-loaded data - renders completely on every single poll; only once
-# that's done do we pause ~2.5s and ask Streamlit to rerun for the next
-# poll. When the refresh finishes, the "done" branch above (which runs
-# BEFORE data is loaded) already cleared the cache and reloaded fresh
-# data, so the very next render after completion shows the newly-fetched
-# posts side by side with everything that was already there - not a
-# separate "new vs. old" view, just the one updated dataset.
-# --------------------------------------------------------------------------
-
-if refresh_status == "running":
-    time.sleep(2.5)
-    st.rerun()
+# (This file used to end with a "wait 2.5s then st.rerun()" polling loop
+# here, to watch a live-running background refresh. There's no longer
+# anything to poll - see the module docstring's "Collection/serving split"
+# - so the script just ends after the Data Explorer tab renders.)

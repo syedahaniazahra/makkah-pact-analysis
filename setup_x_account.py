@@ -1,125 +1,87 @@
 """
 setup_x_account.py
 
-Phase 3 - adds your dedicated X/Twitter scraping account to twscrape's
-local account pool (stored in accounts.db in this folder) using
-COOKIE-based authentication, so fetch_x_test.py - and later, the full
-collection script - can use it to search tweets.
+Phase 3 - verifies the X/Twitter cookies in .env are valid and the session
+is genuinely logged in, before fetch_x_test.py / fetch_x_data.py try to use
+them.
 
-Why cookies instead of username/password: twscrape's own docs note
-username/password login is unreliable and can hit Cloudflare challenges;
-cookie-based accounts are the recommended, stable method, and they
-activate immediately - no separate login step needed.
+2026-09-10: rewritten for the twscrape -> twifork/twikit pivot. See
+x_auth.py's docstring and CLAUDE_INVESTIGATION_LOG.md in this folder for
+why. The old version maintained a local multi-account pool in accounts.db
+(a twscrape concept, via api.pool.add_account_cookies()); twikit's Client
+works directly off cookies each run instead, so there's no separate
+"account pool" file to add/refresh anymore. accounts.db is no longer read
+or written by these scripts - safe to ignore, not deleted automatically.
 
-Credentials are read ONLY from a local .env file in this same folder -
-never hardcode them here and never paste them into chat. Expected keys
-in .env:
-    X_AUTH_TOKEN=...    (the auth_token cookie value from a logged-in browser session)
-    X_CT0=...           (the ct0 cookie value from the same session)
+How to get X_COOKIES (recommended) - via DevTools Network tab, no browser
+extension needed:
+  1. Log into X in a browser with your dedicated scraping account.
+  2. Open DevTools (F12) -> Network tab, then reload x.com so a fresh
+     request appears in the list.
+  3. Click any request to x.com -> Headers tab -> find "Cookie:" under
+     Request Headers.
+  4. Copy the ENTIRE value after "Cookie: " and paste it as X_COOKIES=...
+     in .env (one line, no extra quotes).
 
-How to get X_AUTH_TOKEN / X_CT0: log into X in a browser with your
-dedicated scraping account, open DevTools -> Application/Storage ->
-Cookies for x.com, and copy the "auth_token" and "ct0" values into .env.
+How to get X_AUTH_TOKEN / X_CT0 (the older, narrower fallback): DevTools ->
+Application/Storage -> Cookies for x.com, and copy the "auth_token" and
+"ct0" values individually into .env.
 
-Account naming: the pool label below (ACCOUNT_LABEL) is a fixed constant,
-not read from .env. Earlier runs used a slightly different username
-string each time (typos like "Zarmishhx9ua" vs "Zarmishx9ua"), and since
-twscrape keys accounts by that string, every typo created a NEW duplicate
-row instead of updating the existing one. Using one hardcoded constant
-here means every run refers to the same account - if you want to rename
-it, edit ACCOUNT_LABEL below (in one place) rather than a .env value.
+2026-09-10 (later same day): now retries once (via
+x_auth.is_logged_in_with_retry()) before reporting a dead session - a
+single False can be a transient Cloudflare-challenge blip, not proof the
+cookies are actually bad. On a confirmed-good login, also persists the
+session's cookies (x_auth.save_session_cookies()) so fetch_x_data.py's
+next run starts from this fresh state - including anything X rotated
+(e.g. ct0) - instead of only ever re-reading the static .env snapshot.
+Programmatic username/password re-login is NOT an option here and never
+will be - see x_auth.py's module docstring for why (X retired that flow
+entirely); cookies copied from a real browser are the only way in, which
+is why this script's whole job is verifying + persisting them as well as
+possible, not eliminating the manual step altogether.
 
 Run:
     python setup_x_account.py
 """
 
 import asyncio
-import os
-import sys
 
-from dotenv import load_dotenv
-from twscrape import API
-
-REQUIRED_VARS = ["X_AUTH_TOKEN", "X_CT0"]
-ACCOUNT_LABEL = "makkah_pact_x_scraper"  # fixed on purpose - see note above
-
-
-def debug_print_env_status(raw_values):
-    """Print presence/shape of the .env values WITHOUT ever printing the
-    full secret - just length and first 4 characters, so we can tell
-    ".env isn't being read" apart from "cookies are wrong/expired"."""
-    print("Checking .env values:")
-    for var, val in raw_values.items():
-        if not val:
-            print(f"  {var}: NOT FOUND (0 characters)")
-        else:
-            print(f"  {var}: {len(val)} characters found (starts with '{val[:4]}')")
-    print()
-
-
-def load_credentials():
-    load_dotenv()
-    raw_values = {var: os.getenv(var) for var in REQUIRED_VARS}
-    debug_print_env_status(raw_values)
-
-    missing = [k for k, v in raw_values.items() if not v]
-    if missing:
-        print(f"Missing from .env: {', '.join(missing)}")
-        print("Add these keys to a .env file in this same folder and re-run:")
-        for var in REQUIRED_VARS:
-            print(f"  {var}=...")
-        sys.exit(1)
-    return raw_values
+from x_auth import build_client, is_logged_in_with_retry, save_session_cookies
 
 
 async def main():
-    creds = load_credentials()
-    api = API()  # uses accounts.db in the current folder
+    print("Building a client from your .env cookies ...\n")
+    client = build_client()
 
-    cookies = f"auth_token={creds['X_AUTH_TOKEN']}; ct0={creds['X_CT0']}"
-
-    print(f"Adding account '{ACCOUNT_LABEL}' to the pool via cookies ...")
+    print("Verifying the session is actually logged in on X's side (not "
+          "just that cookies are present - twikit calls a real X endpoint "
+          "and checks the response) ...")
     try:
-        # Cookie-based accounts activate immediately - unlike
-        # username/password accounts, there is NO login_all() step here.
-        await api.pool.add_account(
-            ACCOUNT_LABEL,
-            "",  # password - not used for cookie auth
-            "",  # email - not used for cookie auth
-            "",  # email_password - not used for cookie auth
-            cookies=cookies,
-        )
+        ok = await is_logged_in_with_retry(client)
     except Exception as exc:
-        print(f"\nCould not add the account: {exc}")
+        print(f"\nCould not check login status: {exc}")
         print("Common causes: no internet access from wherever this is "
-              "running, or X_AUTH_TOKEN/X_CT0 in .env are missing/expired.")
-        sys.exit(1)
+              "running, or X is temporarily unreachable. This is different "
+              "from 'not logged in' - that case is reported as False, not "
+              "an exception.")
+        raise SystemExit(1)
 
-    try:
-        accounts = await api.pool.accounts_info()
-        print("\nAccount pool status:")
-        for acc in accounts:
-            print(
-                f"  {acc.get('username')}: "
-                f"logged_in={acc.get('logged_in')} "
-                f"active={acc.get('active')} "
-                f"error={acc.get('error_msg')}"
-            )
-        active_ok = any(acc.get("active") for acc in accounts)
-    except Exception as exc:
-        print(f"(Could not read detailed pool status: {exc})")
-        print("That's not necessarily fatal - fetch_x_test.py will confirm "
-              "the account works by actually running a search.")
-        active_ok = None
-
-    if active_ok is False:
-        print("\nAccount was added but is not showing active - "
-              "X_AUTH_TOKEN/X_CT0 in .env are likely missing, malformed, or "
-              "expired (cookies expire - you may need to re-copy them from "
-              "a fresh browser session).")
-        sys.exit(1)
-
-    print("\nDone. Next: run fetch_x_test.py to confirm scraping works.")
+    if ok:
+        save_session_cookies(client)
+        print("\nLogged in successfully. Next: run fetch_x_test.py to confirm scraping works.")
+    else:
+        print(
+            "\nNOT logged in - X did not accept this session (checked twice, "
+            "so this isn't just a one-off blip). Common causes: the cookies "
+            "are expired or malformed (re-copy them from a fresh browser "
+            "login), or the account is locked/suspended. If you just copied "
+            "fresh cookies and this still fails, this can also be the known "
+            "Cloudflare-challenge issue described in "
+            "CLAUDE_INVESTIGATION_LOG.md rather than a cookie problem - "
+            "don't assume it's your credentials without checking there "
+            "first."
+        )
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

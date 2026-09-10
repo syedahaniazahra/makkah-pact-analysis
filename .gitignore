@@ -1,6 +1,24 @@
 # Credentials / session data - never commit
 .env
 accounts.db
+x_session_cookies.json
+x_session_cookies_meta.json
+
+# Raw / intermediate scraped data - never commit. Privacy (unfiltered raw
+# post text) and noise (regenerated locally every pipeline cycle, not
+# needed for the deployed dashboard - see SYNC_FILES in run_pipeline.py
+# for exactly what IS meant to reach GitHub).
+x_data.csv
+x_test_sample.csv
+*_BACKUP_*.csv
+
+# Local-only logs/diagnostics - never commit. pipeline_status.log is the
+# ONE log deliberately synced (via SYNC_FILES in run_pipeline.py) and is
+# intentionally NOT listed here.
+fetch_diagnostics.log
+pipeline_run_console.log
+pipeline_step_errors.log
+relation_extraction_failures.log
 
 # Python
 __pycache__/

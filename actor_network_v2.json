@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "source": "actor_relations.csv",
+    "total_relation_rows": 4362,
+    "unique_posts_represented": 1364,
+    "node_count": 5,
+    "edge_count": 10,
+    "notes": "Weighted, typed actor network built from Groq-extracted per-pair relation_type data (replaces the earlier raw co-occurrence network). 'mediating' is kept as its own category throughout, never folded into 'unclear'. See mediating_relations below for the specific posts/pairs where it appears."
+  },
+  "nodes": [
+    {
+      "id": "Saudi Arabia",
+      "label": "Saudi Arabia",
+      "relation_row_involvement": 2443
+    },
+    {
+      "id": "Pakistan",
+      "label": "Pakistan",
+      "relation_row_involvement": 2420
+    },
+    {
+      "id": "Turkiye",
+      "label": "Turkiye",
+      "relation_row_involvement": 2249
+    },
+    {
+      "id": "Iran",
+      "label": "Iran",
+      "relation_row_involvement": 1029
+    },
+    {
+      "id": "United States",
+      "label": "United States",
+      "relation_row_involvement": 583
+    }
+  ],
+  "edges": [
+    {
+      "source": "Pakistan",
+      "target": "Saudi Arabia",
+      "weight": 1046,
+      "relation_type_breakdown": {
+        "supportive": 282,
+        "hostile": 32,
+        "skeptical": 150,
+        "neutral-reporting": 580,
+        "mediating": 0,
+        "unclear": 2
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Pakistan",
+      "target": "Turkiye",
+      "weight": 917,
+      "relation_type_breakdown": {
+        "supportive": 199,
+        "hostile": 18,
+        "skeptical": 95,
+        "neutral-reporting": 603,
+        "mediating": 0,
+        "unclear": 2
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Saudi Arabia",
+      "target": "Turkiye",
+      "weight": 914,
+      "relation_type_breakdown": {
+        "supportive": 190,
+        "hostile": 20,
+        "skeptical": 95,
+        "neutral-reporting": 607,
+        "mediating": 0,
+        "unclear": 2
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Iran",
+      "target": "Saudi Arabia",
+      "weight": 327,
+      "relation_type_breakdown": {
+        "supportive": 12,
+        "hostile": 175,
+        "skeptical": 29,
+        "neutral-reporting": 92,
+        "mediating": 0,
+        "unclear": 19
+      },
+      "dominant_relation_type": "hostile"
+    },
+    {
+      "source": "Iran",
+      "target": "Pakistan",
+      "weight": 307,
+      "relation_type_breakdown": {
+        "supportive": 18,
+        "hostile": 115,
+        "skeptical": 46,
+        "neutral-reporting": 108,
+        "mediating": 3,
+        "unclear": 17
+      },
+      "dominant_relation_type": "hostile"
+    },
+    {
+      "source": "Iran",
+      "target": "Turkiye",
+      "weight": 268,
+      "relation_type_breakdown": {
+        "supportive": 14,
+        "hostile": 98,
+        "skeptical": 43,
+        "neutral-reporting": 95,
+        "mediating": 0,
+        "unclear": 18
+      },
+      "dominant_relation_type": "hostile"
+    },
+    {
+      "source": "Saudi Arabia",
+      "target": "United States",
+      "weight": 156,
+      "relation_type_breakdown": {
+        "supportive": 11,
+        "hostile": 35,
+        "skeptical": 29,
+        "neutral-reporting": 75,
+        "mediating": 0,
+        "unclear": 6
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Pakistan",
+      "target": "United States",
+      "weight": 150,
+      "relation_type_breakdown": {
+        "supportive": 10,
+        "hostile": 35,
+        "skeptical": 26,
+        "neutral-reporting": 71,
+        "mediating": 3,
+        "unclear": 5
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Turkiye",
+      "target": "United States",
+      "weight": 150,
+      "relation_type_breakdown": {
+        "supportive": 8,
+        "hostile": 38,
+        "skeptical": 23,
+        "neutral-reporting": 77,
+        "mediating": 1,
+        "unclear": 3
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Iran",
+      "target": "United States",
+      "weight": 127,
+      "relation_type_breakdown": {
+        "supportive": 1,
+        "hostile": 85,
+        "skeptical": 2,
+        "neutral-reporting": 34,
+        "mediating": 0,
+        "unclear": 5
+      },
+      "dominant_relation_type": "hostile"
+    }
+  ],
+  "mediating_relations": [
+    {
+      "post_id": "2091494115770855643",
+      "actor_pair": [
+        "Iran",
+        "Pakistan"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "pakistan’s military chief heads to tehran as iran weighs joining mecca defense pact pakistan’s most powerful military figure is heading to tehran just days after reports emerged that iran has been invited to join the new saudi–turkey–pakistan defense alliance. field marshal asim munir, pakistan’s ch"
+    },
+    {
+      "post_id": "2091494115770855643",
+      "actor_pair": [
+        "Pakistan",
+        "United States"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "pakistan’s military chief heads to tehran as iran weighs joining mecca defense pact pakistan’s most powerful military figure is heading to tehran just days after reports emerged that iran has been invited to join the new saudi–turkey–pakistan defense alliance. field marshal asim munir, pakistan’s ch"
+    },
+    {
+      "post_id": "2090604319808925766",
+      "actor_pair": [
+        "Pakistan",
+        "Iran"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia']",
+      "text_snippet": "erdogan just hosted trump, saudi struck a nuclear deal with him, pakistan mediated with iran on us request. the mecca pact may seem like hedging against the us but all are its close allies."
+    },
+    {
+      "post_id": "2089756797775040931",
+      "actor_pair": [
+        "Turkiye",
+        "United States"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "🟥 update number two | 18 august 2026 ▪️journalists on the ground 🟥 political 🔳 according to the times of israel, citing an informed source, the board of peace is considering abandoning its phased framework for the disarmament of hamas. ▪️ under the reported alternative, hamas would surrender its ent"
+    },
+    {
+      "post_id": "2088922187251999159",
+      "actor_pair": [
+        "Pakistan",
+        "Iran"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan']",
+      "text_snippet": "mohsin naqvi met president pezeshkian and foreign minister araghchi in tehran. khawaja asif says the warring sides are nearing \"some sort of an arrangement.\" six months of war. pakistan signed the mecca pact eight days ago and is still trying to mediate between washington and tehran. that's a narrow"
+    },
+    {
+      "post_id": "2087867679227199881",
+      "actor_pair": [
+        "Pakistan",
+        "United States"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "🇳🇴|norway’s foreign minister has just said in islamabad what the entire western world dares not say: the us-israel war against iran violates international law. \"iran also has the right to be protected as a nation.\" a nato member state has publicly condemned washington and tel aviv. the empire is bei"
+    },
+    {
+      "post_id": "2087661277585829930",
+      "actor_pair": [
+        "Pakistan",
+        "United States"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "let’s share videos and message on youtube! on the seven casualties ​in the video, host danny haiphong references an iranian military report claiming that seven crew members died aboard the uss abraham lincoln following an alleged physical brawl between sailors and their superiors [00:13]. ​however, "
+    }
+  ]
+}

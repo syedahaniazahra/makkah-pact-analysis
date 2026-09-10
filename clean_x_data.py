@@ -78,12 +78,28 @@ Run:
 
 import os
 import re
+import sys
 
 import pandas as pd
 from rapidfuzz import fuzz
 from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 from better_profanity import profanity
+
+# Preventive fix, applied pipeline-wide after a real incident: two other
+# steps in this pipeline (preprocess_x_text.py, build_network_v2.py) each
+# crashed with UnicodeEncodeError while printing scraped X/Twitter text
+# (an emoji) to a Windows console defaulting to a single-byte codepage
+# (cp1252) that can't represent it. This script runs on the same scraped
+# dataset on the same unattended schedule, so reconfiguring stdout/stderr
+# to UTF-8 with errors="replace" here too closes off the same crash class
+# pre-emptively - an unprintable character is swapped for a placeholder
+# instead of ever being able to crash this step.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 DetectorFactory.seed = 0  # make langdetect's output deterministic
 
@@ -168,10 +184,31 @@ class UnionFind:
 
 
 def load_previous_cleaned():
-    """id -> {"detected_language", "duplicate_content_cluster_id"} from the
+    """id -> {"detected_language", "duplicate_content_cluster_id",
+    "flagged_content", "flagged_reason", "topic_relevant",
+    "relations_checked", "relations_recheck_done"} from the
     x_data_cleaned.csv this script wrote LAST run, if any. Empty dict on
     the first-ever run (or if the previous file can't be read), which
-    makes every row "new" - i.e. identical to full reprocessing."""
+    makes every row "new" - i.e. identical to full reprocessing.
+
+    The last 3 fields were added after a real incident (2026-09-08): this
+    function only ever preserved its OWN 4 columns for historical rows
+    (plus confirmed_flag, separately, via flagged_review.csv in main()) -
+    it never carried forward relevance_and_relations.py's own
+    topic_relevant/relations_checked/relations_recheck_done bookkeeping.
+    Since this script rebuilds x_data_cleaned.csv from x_data.csv from
+    scratch on every run, that meant every single pipeline cycle silently
+    reset which rows had already been relevance-checked - forcing
+    relevance_and_relations.py to treat already-done rows as new again
+    every time, re-sending the SAME early posts to Groq and re-appending
+    their relations to actor_relations.csv as duplicates (one real post
+    was reprocessed 8 times before this was caught), corrupting edge
+    weights in the actor network and wasting a large share of the daily
+    Groq quota on redundant work instead of covering new posts. See the
+    matching restoration block in main() (search "Step 5c") for how these
+    are carried forward - the exact same historical-row-reuse pattern this
+    function already used for detected_language/flagged_content, just
+    extended to these 3 columns too."""
     if not os.path.exists(OUTPUT_CSV):
         return {}
     try:
@@ -180,6 +217,7 @@ def load_previous_cleaned():
             usecols=lambda c: c in (
                 "id", "detected_language", "duplicate_content_cluster_id",
                 "flagged_content", "flagged_reason",
+                "topic_relevant", "relations_checked", "relations_recheck_done",
             ),
         )
     except Exception as exc:
@@ -193,6 +231,13 @@ def load_previous_cleaned():
             "duplicate_content_cluster_id": row.get("duplicate_content_cluster_id", ""),
             "flagged_content": row.get("flagged_content", False),
             "flagged_reason": row.get("flagged_reason", ""),
+            # NOT given a default (unlike flagged_content above) - these
+            # are legitimately blank/NaN for any row relevance_and_relations.py
+            # hasn't reached yet, and that tri-state (True / False / not-
+            # yet-checked) must survive the round trip intact.
+            "topic_relevant": row.get("topic_relevant"),
+            "relations_checked": row.get("relations_checked"),
+            "relations_recheck_done": row.get("relations_recheck_done"),
         }
     return lookup
 
@@ -398,6 +443,41 @@ def main():
         df["confirmed_flag"] = pd.array([pd.NA] * len(df), dtype="object")
         print(f"{FLAGGED_REVIEW_CSV} not found - confirmed_flag left blank for all rows "
               f"(nothing has been through manual review yet).")
+
+    # --- Step 5c: preserve relevance_and_relations.py's own incremental
+    # bookkeeping (topic_relevant, relations_checked, relations_recheck_done)
+    # for historical rows ---
+    # Fix for the 2026-09-08 incident: this script rebuilds x_data_cleaned.csv
+    # from x_data.csv from scratch every run. Steps 4/5/5b above already
+    # protect detected_language/duplicate_content_cluster_id/flagged_content/
+    # flagged_reason/confirmed_flag for historical rows the same way - but
+    # relevance_and_relations.py's own progress-tracking columns were never
+    # included, so every pipeline cycle silently reset them to blank for
+    # EVERY row (historical and new alike), making relevance_and_relations.py
+    # believe already-checked rows were untouched. It then re-sent the same
+    # posts to Groq and re-appended their relations to actor_relations.csv as
+    # duplicates - one real post was reprocessed 8 times with inconsistent
+    # classifications before this was caught (2,021 of 4,803 actor_relations.csv
+    # rows, 42%, were duplicates). Fix: same historical-row-reuse pattern as
+    # every column above, using load_previous_cleaned()'s prev_lookup and the
+    # hist_idx already computed at Step 4 - new rows correctly start blank
+    # (they haven't been relevance-checked yet), historical rows restore
+    # whatever relevance_and_relations.py had already recorded for them,
+    # preserving the tri-state True/False/not-yet-checked distinction (no
+    # default in the .get() calls, so genuine NaN survives instead of being
+    # coerced).
+    for col in ("topic_relevant", "relations_checked", "relations_recheck_done"):
+        df[col] = pd.array([pd.NA] * len(df), dtype="object")
+    if hist_idx:
+        for col in ("topic_relevant", "relations_checked", "relations_recheck_done"):
+            df.loc[hist_idx, col] = [
+                prev_lookup[df.loc[i, "id"]].get(col) for i in hist_idx
+            ]
+    n_topic_relevant_preserved = int((df["topic_relevant"] == True).sum())  # noqa: E712
+    n_relations_checked_preserved = int((df["relations_checked"] == True).sum())  # noqa: E712
+    print(f"Preserved relevance-extraction state across {len(hist_idx)} historical "
+          f"row(s) reused this run: topic_relevant=True for {n_topic_relevant_preserved} "
+          f"row(s), relations_checked=True for {n_relations_checked_preserved} row(s).")
 
     # --- Step 8: save (original x_data.csv is never touched) ---
     df.to_csv(OUTPUT_CSV, index=False)

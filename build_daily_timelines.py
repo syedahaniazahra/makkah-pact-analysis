@@ -39,9 +39,25 @@ Run:
 
 import argparse
 import ast
+import sys
 
 import numpy as np
 import pandas as pd
+
+# Preventive fix, applied pipeline-wide after a real incident: two other
+# steps in this pipeline (preprocess_x_text.py, build_network_v2.py) each
+# crashed with UnicodeEncodeError while printing scraped X/Twitter text
+# (an emoji) to a Windows console defaulting to a single-byte codepage
+# (cp1252) that can't represent it. This script processes the same scraped
+# dataset on the same unattended schedule, so reconfiguring stdout/stderr
+# to UTF-8 with errors="replace" here too closes off the same crash class
+# pre-emptively - an unprintable character is swapped for a placeholder
+# instead of ever being able to crash this step.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 X_CSV = "x_data_cleaned.csv"
 GDELT_CSV = "gdelt_data.csv"
@@ -52,8 +68,23 @@ ACTORS = ["Iran", "Pakistan", "Saudi Arabia", "United States", "Turkiye"]
 MIN_POINTS_FOR_CORRELATION = 5
 
 
+def require_columns(df, columns, upstream_script, csv_name):
+    """See extract_actor_mentions.py's require_columns() for the full
+    rationale - same convention, same SKIP_REASON + exit(3) contract that
+    run_pipeline.py's run_step() recognizes as a graceful skip."""
+    missing = [c for c in columns if c not in df.columns]
+    if missing:
+        print(
+            f"SKIP_REASON: column(s) {missing} not found in {csv_name} - "
+            f"{upstream_script} has not completed successfully yet this cycle. "
+            f"Nothing to do until it does; will retry next cycle."
+        )
+        sys.exit(3)
+
+
 def build_x_timeline():
     df = pd.read_csv(X_CSV, dtype={"id": str})
+    require_columns(df, ["actors_mentioned"], "extract_actor_mentions.py", X_CSV)
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
     en = df[df["detected_language"] == "en"].copy()
     en["date"] = en["timestamp"].dt.date
