@@ -155,3 +155,17 @@ sync_to_github            : FAILED   (0s) - git add failed - remove the file man
 ===== RUN END 2026-09-10T20:29:09Z | overall=partial ok=8 skipped=1 failed=1 elapsed=2064s =====
 PIPELINE_RUN|2026-09-10T20:29:09Z|partial|relevance_and_relations: Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle; sync_to_github: git add failed - remove the file manually to continue.
 
+===== RUN START 2026-09-13T05:28:25Z =====
+fetch_x_data              : FAILED   (28s) - self.loop = _get_selector(loop if loop is not None else asyncio.get_running_loop())
+clean_x_data              : FAILED   (0s) - exit code 3221225794
+preprocess_x_text         : FAILED   (0s) - exit code 3221225794
+extract_topics_hashtags   : FAILED   (0s) - exit code 3221225794
+extract_actor_mentions    : FAILED   (0s) - exit code 3221225794
+add_sentiment             : FAILED   (0s) - exit code 3221225794
+relevance_and_relations   : FAILED   (0s) - exit code 3221225794
+build_network_v2          : FAILED   (0s) - exit code 3221225794
+build_daily_timelines     : FAILED   (0s) - exit code 3221225794
+sync_to_github            : FAILED   (0s) - git add failed - git add exit code 3221225794
+===== RUN END 2026-09-13T05:28:54Z | overall=failed ok=0 skipped=0 failed=10 elapsed=28s =====
+PIPELINE_RUN|2026-09-13T05:28:54Z|failed|fetch_x_data: self.loop = _get_selector(loop if loop is not None else asyncio.get_running_loop()); clean_x_data: exit code 3221225794; preprocess_x_text: exit code 3221225794; extract_topics_hashtags: exit code 3221225794; extract_actor_mentions: exit code 3221225794; add_sentiment: exit code 3221225794; relevance_and_relations: exit code 3221225794; build_network_v2: exit code 3221225794; build_daily_timelines: exit code 3221225794; sync_to_github: git add failed - git add exit code 3221225794
+
