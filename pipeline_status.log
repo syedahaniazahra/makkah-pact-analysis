@@ -169,3 +169,31 @@ sync_to_github            : FAILED   (0s) - git add failed - git add exit code 3
 ===== RUN END 2026-09-13T05:28:54Z | overall=failed ok=0 skipped=0 failed=10 elapsed=28s =====
 PIPELINE_RUN|2026-09-13T05:28:54Z|failed|fetch_x_data: self.loop = _get_selector(loop if loop is not None else asyncio.get_running_loop()); clean_x_data: exit code 3221225794; preprocess_x_text: exit code 3221225794; extract_topics_hashtags: exit code 3221225794; extract_actor_mentions: exit code 3221225794; add_sentiment: exit code 3221225794; relevance_and_relations: exit code 3221225794; build_network_v2: exit code 3221225794; build_daily_timelines: exit code 3221225794; sync_to_github: git add failed - git add exit code 3221225794
 
+===== RUN START 2026-09-17T19:34:19Z =====
+fetch_x_data              : SUCCESS  (99s) - 135 new row(s)
+clean_x_data              : SUCCESS  (501s)
+preprocess_x_text         : SUCCESS  (33s)
+extract_topics_hashtags   : FAILED   (3s) - TypeError: normalize() argument 2 must be str, not float
+extract_actor_mentions    : FAILED   (2s) - TypeError: normalize() argument 2 must be str, not float
+add_sentiment             : SKIPPED  (2s) - column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py / clean_x_data.py has not completed successfully yet this cycle. Nothing to do until i
+relevance_and_relations   : SKIPPED  (5s) - column(s) ['actors_mentioned'] not found in C:\Users\zahra\OneDrive\Documents\Project Files\x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed successfully yet thi
+build_network_v2          : SUCCESS  (5s)
+build_daily_timelines     : SKIPPED  (2s) - column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+sync_to_github            : SUCCESS  (7s) - pushed to origin/main
+===== RUN END 2026-09-17T19:45:20Z | overall=partial ok=5 skipped=3 failed=2 elapsed=661s =====
+PIPELINE_RUN|2026-09-17T19:45:20Z|partial|extract_topics_hashtags: TypeError: normalize() argument 2 must be str, not float; extract_actor_mentions: TypeError: normalize() argument 2 must be str, not float; add_sentiment: column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py / clean_x_data.py has not completed successfully yet this cycle. Nothing to do until i; relevance_and_relations: column(s) ['actors_mentioned'] not found in C:\Users\zahra\OneDrive\Documents\Project Files\x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed successfully yet thi; build_daily_timelines: column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.
+
+===== RUN START 2026-09-19T03:10:55Z =====
+fetch_x_data              : FAILED   (0s) - exit code 3221225794
+clean_x_data              : FAILED   (0s) - exit code 3221225794
+preprocess_x_text         : FAILED   (1s) - exit code 3221225794
+extract_topics_hashtags   : FAILED   (0s) - exit code 3221225794
+extract_actor_mentions    : FAILED   (0s) - exit code 3221225794
+add_sentiment             : FAILED   (0s) - exit code 3221225794
+relevance_and_relations   : FAILED   (0s) - exit code 3221225794
+build_network_v2          : FAILED   (0s) - exit code 3221225794
+build_daily_timelines     : FAILED   (0s) - exit code 3221225794
+sync_to_github            : FAILED   (0s) - git add failed - git add exit code 3221225794
+===== RUN END 2026-09-19T03:10:57Z | overall=failed ok=0 skipped=0 failed=10 elapsed=2s =====
+PIPELINE_RUN|2026-09-19T03:10:57Z|failed|fetch_x_data: exit code 3221225794; clean_x_data: exit code 3221225794; preprocess_x_text: exit code 3221225794; extract_topics_hashtags: exit code 3221225794; extract_actor_mentions: exit code 3221225794; add_sentiment: exit code 3221225794; relevance_and_relations: exit code 3221225794; build_network_v2: exit code 3221225794; build_daily_timelines: exit code 3221225794; sync_to_github: git add failed - git add exit code 3221225794
+
