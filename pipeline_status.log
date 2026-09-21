@@ -211,3 +211,16 @@ sync_to_github            : FAILED   (1s) - git push failed - fatal: unable to a
 ===== RUN END 2026-09-19T04:24:54Z | overall=partial ok=3 skipped=3 failed=4 elapsed=52s =====
 PIPELINE_RUN|2026-09-19T04:24:54Z|partial|fetch_x_data: curl_cffi.requests.exceptions.DNSError: Failed to perform, curl: (6) Could not resolve host: x.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details.; extract_topics_hashtags: TypeError: normalize() argument 2 must be str, not float; extract_actor_mentions: TypeError: normalize() argument 2 must be str, not float; add_sentiment: column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py / clean_x_data.py has not completed successfully yet this cycle. Nothing to do until i; relevance_and_relations: column(s) ['actors_mentioned'] not found in C:\Users\zahra\OneDrive\Documents\Project Files\x_data_cleaned.csv - preprocess_x_text.py / extract_actor_mentions.py has not completed successfully yet thi; build_daily_timelines: column(s) ['actors_mentioned'] not found in x_data_cleaned.csv - extract_actor_mentions.py has not completed successfully yet this cycle. Nothing to do until it does; will retry next cycle.; sync_to_github: git push failed - fatal: unable to access 'https://github.com/syedahaniazahra/makkah-pact-analysis.git/': Could not resolve host: github.com
 
+===== RUN START 2026-09-21T10:43:45Z =====
+clean_x_data              : SUCCESS  (119s)
+preprocess_x_text         : SUCCESS  (32s)
+extract_topics_hashtags   : FAILED   (2s) - TypeError: Invalid value '<ArrowStringArray>
+extract_actor_mentions    : FAILED   (3s) - TypeError: Invalid value '<ArrowStringArray>
+add_sentiment             : SUCCESS  (9s)
+relevance_and_relations   : FAILED   (2700s) - timed out after 2700s
+build_network_v2          : SUCCESS  (6s)
+build_daily_timelines     : SUCCESS  (3s)
+sync_to_github            : SUCCESS  (6s) - pushed to origin/main
+===== RUN END 2026-09-21T11:31:44Z | overall=partial ok=6 skipped=0 failed=3 elapsed=2879s =====
+PIPELINE_RUN|2026-09-21T11:31:44Z|partial|extract_topics_hashtags: TypeError: Invalid value '<ArrowStringArray>; extract_actor_mentions: TypeError: Invalid value '<ArrowStringArray>; relevance_and_relations: timed out after 2700s
+
