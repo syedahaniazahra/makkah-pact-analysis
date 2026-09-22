@@ -224,3 +224,30 @@ sync_to_github            : SUCCESS  (6s) - pushed to origin/main
 ===== RUN END 2026-09-21T11:31:44Z | overall=partial ok=6 skipped=0 failed=3 elapsed=2879s =====
 PIPELINE_RUN|2026-09-21T11:31:44Z|partial|extract_topics_hashtags: TypeError: Invalid value '<ArrowStringArray>; extract_actor_mentions: TypeError: Invalid value '<ArrowStringArray>; relevance_and_relations: timed out after 2700s
 
+===== RUN START 2026-09-21T17:27:25Z =====
+clean_x_data              : SUCCESS  (7s)
+preprocess_x_text         : SUCCESS  (20s)
+extract_topics_hashtags   : FAILED   (2s) - TypeError: Invalid value '<ArrowStringArray>
+extract_actor_mentions    : FAILED   (3s) - TypeError: Invalid value '<ArrowStringArray>
+add_sentiment             : SUCCESS  (9s)
+relevance_and_relations   : SKIPPED  (139s) - Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle
+build_network_v2          : SUCCESS  (4s)
+build_daily_timelines     : SUCCESS  (2s)
+sync_to_github            : SUCCESS  (5s) - pushed to origin/main
+===== RUN END 2026-09-21T17:30:37Z | overall=partial ok=6 skipped=1 failed=2 elapsed=191s =====
+PIPELINE_RUN|2026-09-21T17:30:37Z|partial|extract_topics_hashtags: TypeError: Invalid value '<ArrowStringArray>; extract_actor_mentions: TypeError: Invalid value '<ArrowStringArray>; relevance_and_relations: Relation extraction skipped this cycle - Groq quota limit (TPD), will retry next cycle
+
+===== RUN START 2026-09-22T04:00:38Z =====
+fetch_x_data              : FAILED   (4s) - exit code 1073807364
+clean_x_data              : FAILED   (0s) - exit code 3221225794
+preprocess_x_text         : FAILED   (0s) - exit code 3221225794
+extract_topics_hashtags   : FAILED   (0s) - exit code 3221225794
+extract_actor_mentions    : FAILED   (0s) - exit code 3221225794
+add_sentiment             : FAILED   (0s) - exit code 3221225794
+relevance_and_relations   : FAILED   (0s) - exit code 3221225794
+build_network_v2          : FAILED   (0s) - exit code 3221225794
+build_daily_timelines     : FAILED   (0s) - exit code 3221225794
+sync_to_github            : FAILED   (0s) - git add failed - git add exit code 3221225794
+===== RUN END 2026-09-22T04:00:43Z | overall=failed ok=0 skipped=0 failed=10 elapsed=5s =====
+PIPELINE_RUN|2026-09-22T04:00:43Z|failed|fetch_x_data: exit code 1073807364; clean_x_data: exit code 3221225794; preprocess_x_text: exit code 3221225794; extract_topics_hashtags: exit code 3221225794; extract_actor_mentions: exit code 3221225794; add_sentiment: exit code 3221225794; relevance_and_relations: exit code 3221225794; build_network_v2: exit code 3221225794; build_daily_timelines: exit code 3221225794; sync_to_github: git add failed - git add exit code 3221225794
+

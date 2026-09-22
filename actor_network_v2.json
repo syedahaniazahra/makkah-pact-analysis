@@ -1,8 +1,8 @@
 {
   "meta": {
     "source": "actor_relations.csv",
-    "total_relation_rows": 4362,
-    "unique_posts_represented": 1364,
+    "total_relation_rows": 4692,
+    "unique_posts_represented": 1517,
     "node_count": 5,
     "edge_count": 10,
     "notes": "Weighted, typed actor network built from Groq-extracted per-pair relation_type data (replaces the earlier raw co-occurrence network). 'mediating' is kept as its own category throughout, never folded into 'unclear'. See mediating_relations below for the specific posts/pairs where it appears."
@@ -11,39 +11,39 @@
     {
       "id": "Saudi Arabia",
       "label": "Saudi Arabia",
-      "relation_row_involvement": 2443
+      "relation_row_involvement": 2653
     },
     {
       "id": "Pakistan",
       "label": "Pakistan",
-      "relation_row_involvement": 2420
+      "relation_row_involvement": 2625
     },
     {
       "id": "Turkiye",
       "label": "Turkiye",
-      "relation_row_involvement": 2249
+      "relation_row_involvement": 2395
     },
     {
       "id": "Iran",
       "label": "Iran",
-      "relation_row_involvement": 1029
+      "relation_row_involvement": 1097
     },
     {
       "id": "United States",
       "label": "United States",
-      "relation_row_involvement": 583
+      "relation_row_involvement": 614
     }
   ],
   "edges": [
     {
       "source": "Pakistan",
       "target": "Saudi Arabia",
-      "weight": 1046,
+      "weight": 1152,
       "relation_type_breakdown": {
-        "supportive": 282,
-        "hostile": 32,
-        "skeptical": 150,
-        "neutral-reporting": 580,
+        "supportive": 290,
+        "hostile": 60,
+        "skeptical": 194,
+        "neutral-reporting": 606,
         "mediating": 0,
         "unclear": 2
       },
@@ -52,26 +52,26 @@
     {
       "source": "Pakistan",
       "target": "Turkiye",
-      "weight": 917,
+      "weight": 985,
       "relation_type_breakdown": {
-        "supportive": 199,
-        "hostile": 18,
-        "skeptical": 95,
-        "neutral-reporting": 603,
+        "supportive": 207,
+        "hostile": 22,
+        "skeptical": 118,
+        "neutral-reporting": 635,
         "mediating": 0,
-        "unclear": 2
+        "unclear": 3
       },
       "dominant_relation_type": "neutral-reporting"
     },
     {
       "source": "Saudi Arabia",
       "target": "Turkiye",
-      "weight": 914,
+      "weight": 979,
       "relation_type_breakdown": {
-        "supportive": 190,
-        "hostile": 20,
-        "skeptical": 95,
-        "neutral-reporting": 607,
+        "supportive": 196,
+        "hostile": 35,
+        "skeptical": 119,
+        "neutral-reporting": 627,
         "mediating": 0,
         "unclear": 2
       },
@@ -80,12 +80,12 @@
     {
       "source": "Iran",
       "target": "Saudi Arabia",
-      "weight": 327,
+      "weight": 355,
       "relation_type_breakdown": {
-        "supportive": 12,
-        "hostile": 175,
-        "skeptical": 29,
-        "neutral-reporting": 92,
+        "supportive": 15,
+        "hostile": 192,
+        "skeptical": 31,
+        "neutral-reporting": 98,
         "mediating": 0,
         "unclear": 19
       },
@@ -94,40 +94,40 @@
     {
       "source": "Iran",
       "target": "Pakistan",
-      "weight": 307,
+      "weight": 331,
       "relation_type_breakdown": {
         "supportive": 18,
-        "hostile": 115,
-        "skeptical": 46,
-        "neutral-reporting": 108,
+        "hostile": 128,
+        "skeptical": 47,
+        "neutral-reporting": 117,
         "mediating": 3,
-        "unclear": 17
+        "unclear": 18
       },
       "dominant_relation_type": "hostile"
     },
     {
       "source": "Iran",
       "target": "Turkiye",
-      "weight": 268,
+      "weight": 276,
       "relation_type_breakdown": {
         "supportive": 14,
-        "hostile": 98,
+        "hostile": 104,
         "skeptical": 43,
-        "neutral-reporting": 95,
+        "neutral-reporting": 96,
         "mediating": 0,
-        "unclear": 18
+        "unclear": 19
       },
       "dominant_relation_type": "hostile"
     },
     {
       "source": "Saudi Arabia",
       "target": "United States",
-      "weight": 156,
+      "weight": 167,
       "relation_type_breakdown": {
         "supportive": 11,
-        "hostile": 35,
-        "skeptical": 29,
-        "neutral-reporting": 75,
+        "hostile": 39,
+        "skeptical": 30,
+        "neutral-reporting": 81,
         "mediating": 0,
         "unclear": 6
       },
@@ -136,42 +136,42 @@
     {
       "source": "Pakistan",
       "target": "United States",
-      "weight": 150,
+      "weight": 157,
       "relation_type_breakdown": {
         "supportive": 10,
-        "hostile": 35,
-        "skeptical": 26,
-        "neutral-reporting": 71,
+        "hostile": 37,
+        "skeptical": 27,
+        "neutral-reporting": 73,
         "mediating": 3,
-        "unclear": 5
+        "unclear": 7
       },
       "dominant_relation_type": "neutral-reporting"
     },
     {
       "source": "Turkiye",
       "target": "United States",
-      "weight": 150,
+      "weight": 155,
       "relation_type_breakdown": {
         "supportive": 8,
-        "hostile": 38,
-        "skeptical": 23,
-        "neutral-reporting": 77,
+        "hostile": 39,
+        "skeptical": 24,
+        "neutral-reporting": 78,
         "mediating": 1,
-        "unclear": 3
+        "unclear": 5
       },
       "dominant_relation_type": "neutral-reporting"
     },
     {
       "source": "Iran",
       "target": "United States",
-      "weight": 127,
+      "weight": 135,
       "relation_type_breakdown": {
         "supportive": 1,
-        "hostile": 85,
+        "hostile": 89,
         "skeptical": 2,
-        "neutral-reporting": 34,
+        "neutral-reporting": 35,
         "mediating": 0,
-        "unclear": 5
+        "unclear": 8
       },
       "dominant_relation_type": "hostile"
     }
@@ -183,7 +183,7 @@
         "Iran",
         "Pakistan"
       ],
-      "actors_mentioned_in_post": null,
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
       "text_snippet": "pakistan’s military chief heads to tehran as iran weighs joining mecca defense pact pakistan’s most powerful military figure is heading to tehran just days after reports emerged that iran has been invited to join the new saudi–turkey–pakistan defense alliance. field marshal asim munir, pakistan’s ch"
     },
     {
@@ -192,7 +192,7 @@
         "Pakistan",
         "United States"
       ],
-      "actors_mentioned_in_post": null,
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
       "text_snippet": "pakistan’s military chief heads to tehran as iran weighs joining mecca defense pact pakistan’s most powerful military figure is heading to tehran just days after reports emerged that iran has been invited to join the new saudi–turkey–pakistan defense alliance. field marshal asim munir, pakistan’s ch"
     },
     {
@@ -201,7 +201,7 @@
         "Pakistan",
         "Iran"
       ],
-      "actors_mentioned_in_post": null,
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia']",
       "text_snippet": "erdogan just hosted trump, saudi struck a nuclear deal with him, pakistan mediated with iran on us request. the mecca pact may seem like hedging against the us but all are its close allies."
     },
     {
@@ -210,7 +210,7 @@
         "Turkiye",
         "United States"
       ],
-      "actors_mentioned_in_post": null,
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
       "text_snippet": "🟥 update number two | 18 august 2026 ▪️journalists on the ground 🟥 political 🔳 according to the times of israel, citing an informed source, the board of peace is considering abandoning its phased framework for the disarmament of hamas. ▪️ under the reported alternative, hamas would surrender its ent"
     },
     {
@@ -219,7 +219,7 @@
         "Pakistan",
         "Iran"
       ],
-      "actors_mentioned_in_post": null,
+      "actors_mentioned_in_post": "['Iran', 'Pakistan']",
       "text_snippet": "mohsin naqvi met president pezeshkian and foreign minister araghchi in tehran. khawaja asif says the warring sides are nearing \"some sort of an arrangement.\" six months of war. pakistan signed the mecca pact eight days ago and is still trying to mediate between washington and tehran. that's a narrow"
     },
     {
@@ -228,7 +228,7 @@
         "Pakistan",
         "United States"
       ],
-      "actors_mentioned_in_post": null,
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
       "text_snippet": "🇳🇴|norway’s foreign minister has just said in islamabad what the entire western world dares not say: the us-israel war against iran violates international law. \"iran also has the right to be protected as a nation.\" a nato member state has publicly condemned washington and tel aviv. the empire is bei"
     },
     {
@@ -237,7 +237,7 @@
         "Pakistan",
         "United States"
       ],
-      "actors_mentioned_in_post": null,
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
       "text_snippet": "let’s share videos and message on youtube! on the seven casualties ​in the video, host danny haiphong references an iranian military report claiming that seven crew members died aboard the uss abraham lincoln following an alleged physical brawl between sailors and their superiors [00:13]. ​however, "
     }
   ]
