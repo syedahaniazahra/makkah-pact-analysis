@@ -1,8 +1,8 @@
 {
   "meta": {
     "source": "actor_relations.csv",
-    "total_relation_rows": 4692,
-    "unique_posts_represented": 1517,
+    "total_relation_rows": 4735,
+    "unique_posts_represented": 1537,
     "node_count": 5,
     "edge_count": 10,
     "notes": "Weighted, typed actor network built from Groq-extracted per-pair relation_type data (replaces the earlier raw co-occurrence network). 'mediating' is kept as its own category throughout, never folded into 'unclear'. See mediating_relations below for the specific posts/pairs where it appears."
@@ -11,22 +11,22 @@
     {
       "id": "Saudi Arabia",
       "label": "Saudi Arabia",
-      "relation_row_involvement": 2653
+      "relation_row_involvement": 2681
     },
     {
       "id": "Pakistan",
       "label": "Pakistan",
-      "relation_row_involvement": 2625
+      "relation_row_involvement": 2654
     },
     {
       "id": "Turkiye",
       "label": "Turkiye",
-      "relation_row_involvement": 2395
+      "relation_row_involvement": 2420
     },
     {
       "id": "Iran",
       "label": "Iran",
-      "relation_row_involvement": 1097
+      "relation_row_involvement": 1101
     },
     {
       "id": "United States",
@@ -38,12 +38,12 @@
     {
       "source": "Pakistan",
       "target": "Saudi Arabia",
-      "weight": 1152,
+      "weight": 1167,
       "relation_type_breakdown": {
         "supportive": 290,
-        "hostile": 60,
-        "skeptical": 194,
-        "neutral-reporting": 606,
+        "hostile": 61,
+        "skeptical": 199,
+        "neutral-reporting": 615,
         "mediating": 0,
         "unclear": 2
       },
@@ -52,12 +52,12 @@
     {
       "source": "Pakistan",
       "target": "Turkiye",
-      "weight": 985,
+      "weight": 998,
       "relation_type_breakdown": {
         "supportive": 207,
-        "hostile": 22,
-        "skeptical": 118,
-        "neutral-reporting": 635,
+        "hostile": 24,
+        "skeptical": 122,
+        "neutral-reporting": 642,
         "mediating": 0,
         "unclear": 3
       },
@@ -66,12 +66,12 @@
     {
       "source": "Saudi Arabia",
       "target": "Turkiye",
-      "weight": 979,
+      "weight": 990,
       "relation_type_breakdown": {
         "supportive": 196,
         "hostile": 35,
-        "skeptical": 119,
-        "neutral-reporting": 627,
+        "skeptical": 124,
+        "neutral-reporting": 633,
         "mediating": 0,
         "unclear": 2
       },
@@ -80,12 +80,12 @@
     {
       "source": "Iran",
       "target": "Saudi Arabia",
-      "weight": 355,
+      "weight": 357,
       "relation_type_breakdown": {
         "supportive": 15,
-        "hostile": 192,
+        "hostile": 193,
         "skeptical": 31,
-        "neutral-reporting": 98,
+        "neutral-reporting": 99,
         "mediating": 0,
         "unclear": 19
       },
@@ -94,12 +94,12 @@
     {
       "source": "Iran",
       "target": "Pakistan",
-      "weight": 331,
+      "weight": 332,
       "relation_type_breakdown": {
         "supportive": 18,
         "hostile": 128,
         "skeptical": 47,
-        "neutral-reporting": 117,
+        "neutral-reporting": 118,
         "mediating": 3,
         "unclear": 18
       },
@@ -108,12 +108,12 @@
     {
       "source": "Iran",
       "target": "Turkiye",
-      "weight": 276,
+      "weight": 277,
       "relation_type_breakdown": {
         "supportive": 14,
         "hostile": 104,
         "skeptical": 43,
-        "neutral-reporting": 96,
+        "neutral-reporting": 97,
         "mediating": 0,
         "unclear": 19
       },

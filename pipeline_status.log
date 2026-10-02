@@ -251,3 +251,16 @@ sync_to_github            : FAILED   (0s) - git add failed - git add exit code 3
 ===== RUN END 2026-09-22T04:00:43Z | overall=failed ok=0 skipped=0 failed=10 elapsed=5s =====
 PIPELINE_RUN|2026-09-22T04:00:43Z|failed|fetch_x_data: exit code 1073807364; clean_x_data: exit code 3221225794; preprocess_x_text: exit code 3221225794; extract_topics_hashtags: exit code 3221225794; extract_actor_mentions: exit code 3221225794; add_sentiment: exit code 3221225794; relevance_and_relations: exit code 3221225794; build_network_v2: exit code 3221225794; build_daily_timelines: exit code 3221225794; sync_to_github: git add failed - git add exit code 3221225794
 
+===== RUN START 2026-09-22T19:55:47Z =====
+clean_x_data              : SUCCESS  (14s)
+preprocess_x_text         : SUCCESS  (38s)
+extract_topics_hashtags   : SUCCESS  (6s)
+extract_actor_mentions    : SUCCESS  (3s)
+add_sentiment             : SUCCESS  (10s)
+relevance_and_relations   : FAILED   (2700s) - timed out after 2700s
+build_network_v2          : SUCCESS  (5s)
+build_daily_timelines     : SUCCESS  (3s)
+sync_to_github            : SUCCESS  (6s) - pushed to origin/main
+===== RUN END 2026-09-22T20:42:12Z | overall=partial ok=8 skipped=0 failed=1 elapsed=2785s =====
+PIPELINE_RUN|2026-09-22T20:42:12Z|partial|relevance_and_relations: timed out after 2700s
+
