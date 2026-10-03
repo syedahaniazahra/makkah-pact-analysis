@@ -264,3 +264,17 @@ sync_to_github            : SUCCESS  (6s) - pushed to origin/main
 ===== RUN END 2026-09-22T20:42:12Z | overall=partial ok=8 skipped=0 failed=1 elapsed=2785s =====
 PIPELINE_RUN|2026-09-22T20:42:12Z|partial|relevance_and_relations: timed out after 2700s
 
+===== RUN START 2026-10-02T20:24:02Z =====
+fetch_x_data              : SUCCESS  (82s) - 56 new row(s)
+clean_x_data              : SUCCESS  (37s)
+preprocess_x_text         : SUCCESS  (33s)
+extract_topics_hashtags   : SUCCESS  (6s)
+extract_actor_mentions    : SUCCESS  (3s)
+add_sentiment             : SUCCESS  (10s)
+relevance_and_relations   : FAILED   (50s) - RuntimeError: [full batch 1/175 (3 posts)] gave up after 5 attempts: Connection error.
+build_network_v2          : SUCCESS  (5s)
+build_daily_timelines     : SUCCESS  (3s)
+sync_to_github            : SUCCESS  (7s) - pushed to origin/main
+===== RUN END 2026-10-02T20:27:58Z | overall=partial ok=9 skipped=0 failed=1 elapsed=236s =====
+PIPELINE_RUN|2026-10-02T20:27:58Z|partial|relevance_and_relations: RuntimeError: [full batch 1/175 (3 posts)] gave up after 5 attempts: Connection error.
+

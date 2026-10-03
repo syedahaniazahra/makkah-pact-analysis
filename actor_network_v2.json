@@ -1,8 +1,8 @@
 {
   "meta": {
     "source": "actor_relations.csv",
-    "total_relation_rows": 4735,
-    "unique_posts_represented": 1537,
+    "total_relation_rows": 4930,
+    "unique_posts_represented": 1612,
     "node_count": 5,
     "edge_count": 10,
     "notes": "Weighted, typed actor network built from Groq-extracted per-pair relation_type data (replaces the earlier raw co-occurrence network). 'mediating' is kept as its own category throughout, never folded into 'unclear'. See mediating_relations below for the specific posts/pairs where it appears."
@@ -11,123 +11,123 @@
     {
       "id": "Saudi Arabia",
       "label": "Saudi Arabia",
-      "relation_row_involvement": 2681
+      "relation_row_involvement": 2804
     },
     {
       "id": "Pakistan",
       "label": "Pakistan",
-      "relation_row_involvement": 2654
+      "relation_row_involvement": 2779
     },
     {
       "id": "Turkiye",
       "label": "Turkiye",
-      "relation_row_involvement": 2420
+      "relation_row_involvement": 2517
     },
     {
       "id": "Iran",
       "label": "Iran",
-      "relation_row_involvement": 1101
+      "relation_row_involvement": 1143
     },
     {
       "id": "United States",
       "label": "United States",
-      "relation_row_involvement": 614
+      "relation_row_involvement": 617
     }
   ],
   "edges": [
     {
       "source": "Pakistan",
       "target": "Saudi Arabia",
-      "weight": 1167,
+      "weight": 1229,
       "relation_type_breakdown": {
-        "supportive": 290,
-        "hostile": 61,
-        "skeptical": 199,
-        "neutral-reporting": 615,
-        "mediating": 0,
-        "unclear": 2
+        "supportive": 313,
+        "hostile": 63,
+        "skeptical": 207,
+        "neutral-reporting": 642,
+        "mediating": 1,
+        "unclear": 3
       },
       "dominant_relation_type": "neutral-reporting"
     },
     {
       "source": "Pakistan",
       "target": "Turkiye",
-      "weight": 998,
+      "weight": 1044,
       "relation_type_breakdown": {
-        "supportive": 207,
-        "hostile": 24,
-        "skeptical": 122,
-        "neutral-reporting": 642,
+        "supportive": 218,
+        "hostile": 26,
+        "skeptical": 126,
+        "neutral-reporting": 670,
+        "mediating": 0,
+        "unclear": 4
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Saudi Arabia",
+      "target": "Turkiye",
+      "weight": 1032,
+      "relation_type_breakdown": {
+        "supportive": 209,
+        "hostile": 35,
+        "skeptical": 129,
+        "neutral-reporting": 656,
         "mediating": 0,
         "unclear": 3
       },
       "dominant_relation_type": "neutral-reporting"
     },
     {
-      "source": "Saudi Arabia",
-      "target": "Turkiye",
-      "weight": 990,
-      "relation_type_breakdown": {
-        "supportive": 196,
-        "hostile": 35,
-        "skeptical": 124,
-        "neutral-reporting": 633,
-        "mediating": 0,
-        "unclear": 2
-      },
-      "dominant_relation_type": "neutral-reporting"
-    },
-    {
       "source": "Iran",
       "target": "Saudi Arabia",
-      "weight": 357,
+      "weight": 373,
       "relation_type_breakdown": {
         "supportive": 15,
-        "hostile": 193,
+        "hostile": 197,
         "skeptical": 31,
-        "neutral-reporting": 99,
+        "neutral-reporting": 108,
         "mediating": 0,
-        "unclear": 19
+        "unclear": 22
       },
       "dominant_relation_type": "hostile"
     },
     {
       "source": "Iran",
       "target": "Pakistan",
-      "weight": 332,
+      "weight": 349,
       "relation_type_breakdown": {
-        "supportive": 18,
-        "hostile": 128,
+        "supportive": 19,
+        "hostile": 129,
         "skeptical": 47,
-        "neutral-reporting": 118,
+        "neutral-reporting": 132,
         "mediating": 3,
-        "unclear": 18
+        "unclear": 19
       },
-      "dominant_relation_type": "hostile"
+      "dominant_relation_type": "neutral-reporting"
     },
     {
       "source": "Iran",
       "target": "Turkiye",
-      "weight": 277,
+      "weight": 286,
       "relation_type_breakdown": {
         "supportive": 14,
         "hostile": 104,
         "skeptical": 43,
-        "neutral-reporting": 97,
+        "neutral-reporting": 104,
         "mediating": 0,
-        "unclear": 19
+        "unclear": 21
       },
       "dominant_relation_type": "hostile"
     },
     {
       "source": "Saudi Arabia",
       "target": "United States",
-      "weight": 167,
+      "weight": 170,
       "relation_type_breakdown": {
-        "supportive": 11,
+        "supportive": 12,
         "hostile": 39,
-        "skeptical": 30,
-        "neutral-reporting": 81,
+        "skeptical": 31,
+        "neutral-reporting": 82,
         "mediating": 0,
         "unclear": 6
       },
@@ -239,6 +239,15 @@
       ],
       "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
       "text_snippet": "let’s share videos and message on youtube! on the seven casualties ​in the video, host danny haiphong references an iranian military report claiming that seven crew members died aboard the uss abraham lincoln following an alleged physical brawl between sailors and their superiors [00:13]. ​however, "
+    },
+    {
+      "post_id": "2106169574882512936",
+      "actor_pair": [
+        "Pakistan",
+        "Saudi Arabia"
+      ],
+      "actors_mentioned_in_post": "['Pakistan', 'Saudi Arabia']",
+      "text_snippet": "🌍 global watch — border watch pakistan proposes 'mecca pact' for political engagement with houthis islamabad has revealed an agenda for an emergency meeting in mecca to facilitate political dialogue with houthi rebels. this move positions pakistan as a key mediator in the saudi-yemen conflict, impac"
     }
   ]
 }
