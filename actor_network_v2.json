@@ -1,8 +1,8 @@
 {
   "meta": {
     "source": "actor_relations.csv",
-    "total_relation_rows": 4930,
-    "unique_posts_represented": 1612,
+    "total_relation_rows": 5435,
+    "unique_posts_represented": 1790,
     "node_count": 5,
     "edge_count": 10,
     "notes": "Weighted, typed actor network built from Groq-extracted per-pair relation_type data (replaces the earlier raw co-occurrence network). 'mediating' is kept as its own category throughout, never folded into 'unclear'. See mediating_relations below for the specific posts/pairs where it appears."
@@ -11,167 +11,167 @@
     {
       "id": "Saudi Arabia",
       "label": "Saudi Arabia",
-      "relation_row_involvement": 2804
+      "relation_row_involvement": 3087
     },
     {
       "id": "Pakistan",
       "label": "Pakistan",
-      "relation_row_involvement": 2779
+      "relation_row_involvement": 3049
     },
     {
       "id": "Turkiye",
       "label": "Turkiye",
-      "relation_row_involvement": 2517
+      "relation_row_involvement": 2761
     },
     {
       "id": "Iran",
       "label": "Iran",
-      "relation_row_involvement": 1143
+      "relation_row_involvement": 1280
     },
     {
       "id": "United States",
       "label": "United States",
-      "relation_row_involvement": 617
+      "relation_row_involvement": 693
     }
   ],
   "edges": [
     {
       "source": "Pakistan",
       "target": "Saudi Arabia",
-      "weight": 1229,
+      "weight": 1339,
       "relation_type_breakdown": {
-        "supportive": 313,
-        "hostile": 63,
-        "skeptical": 207,
-        "neutral-reporting": 642,
-        "mediating": 1,
-        "unclear": 3
-      },
-      "dominant_relation_type": "neutral-reporting"
-    },
-    {
-      "source": "Pakistan",
-      "target": "Turkiye",
-      "weight": 1044,
-      "relation_type_breakdown": {
-        "supportive": 218,
-        "hostile": 26,
-        "skeptical": 126,
-        "neutral-reporting": 670,
-        "mediating": 0,
-        "unclear": 4
-      },
-      "dominant_relation_type": "neutral-reporting"
-    },
-    {
-      "source": "Saudi Arabia",
-      "target": "Turkiye",
-      "weight": 1032,
-      "relation_type_breakdown": {
-        "supportive": 209,
-        "hostile": 35,
-        "skeptical": 129,
-        "neutral-reporting": 656,
-        "mediating": 0,
-        "unclear": 3
-      },
-      "dominant_relation_type": "neutral-reporting"
-    },
-    {
-      "source": "Iran",
-      "target": "Saudi Arabia",
-      "weight": 373,
-      "relation_type_breakdown": {
-        "supportive": 15,
-        "hostile": 197,
-        "skeptical": 31,
-        "neutral-reporting": 108,
-        "mediating": 0,
-        "unclear": 22
-      },
-      "dominant_relation_type": "hostile"
-    },
-    {
-      "source": "Iran",
-      "target": "Pakistan",
-      "weight": 349,
-      "relation_type_breakdown": {
-        "supportive": 19,
-        "hostile": 129,
-        "skeptical": 47,
-        "neutral-reporting": 132,
-        "mediating": 3,
-        "unclear": 19
-      },
-      "dominant_relation_type": "neutral-reporting"
-    },
-    {
-      "source": "Iran",
-      "target": "Turkiye",
-      "weight": 286,
-      "relation_type_breakdown": {
-        "supportive": 14,
-        "hostile": 104,
-        "skeptical": 43,
-        "neutral-reporting": 104,
-        "mediating": 0,
-        "unclear": 21
-      },
-      "dominant_relation_type": "hostile"
-    },
-    {
-      "source": "Saudi Arabia",
-      "target": "United States",
-      "weight": 170,
-      "relation_type_breakdown": {
-        "supportive": 12,
-        "hostile": 39,
-        "skeptical": 31,
-        "neutral-reporting": 82,
-        "mediating": 0,
-        "unclear": 6
-      },
-      "dominant_relation_type": "neutral-reporting"
-    },
-    {
-      "source": "Pakistan",
-      "target": "United States",
-      "weight": 157,
-      "relation_type_breakdown": {
-        "supportive": 10,
-        "hostile": 37,
-        "skeptical": 27,
-        "neutral-reporting": 73,
-        "mediating": 3,
-        "unclear": 7
-      },
-      "dominant_relation_type": "neutral-reporting"
-    },
-    {
-      "source": "Turkiye",
-      "target": "United States",
-      "weight": 155,
-      "relation_type_breakdown": {
-        "supportive": 8,
-        "hostile": 39,
-        "skeptical": 24,
-        "neutral-reporting": 78,
+        "supportive": 355,
+        "hostile": 73,
+        "skeptical": 222,
+        "neutral-reporting": 683,
         "mediating": 1,
         "unclear": 5
       },
       "dominant_relation_type": "neutral-reporting"
     },
     {
+      "source": "Pakistan",
+      "target": "Turkiye",
+      "weight": 1136,
+      "relation_type_breakdown": {
+        "supportive": 244,
+        "hostile": 28,
+        "skeptical": 136,
+        "neutral-reporting": 723,
+        "mediating": 0,
+        "unclear": 5
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Saudi Arabia",
+      "target": "Turkiye",
+      "weight": 1134,
+      "relation_type_breakdown": {
+        "supportive": 246,
+        "hostile": 40,
+        "skeptical": 139,
+        "neutral-reporting": 705,
+        "mediating": 0,
+        "unclear": 4
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Iran",
+      "target": "Saudi Arabia",
+      "weight": 419,
+      "relation_type_breakdown": {
+        "supportive": 23,
+        "hostile": 224,
+        "skeptical": 33,
+        "neutral-reporting": 114,
+        "mediating": 1,
+        "unclear": 24
+      },
+      "dominant_relation_type": "hostile"
+    },
+    {
+      "source": "Iran",
+      "target": "Pakistan",
+      "weight": 397,
+      "relation_type_breakdown": {
+        "supportive": 32,
+        "hostile": 151,
+        "skeptical": 49,
+        "neutral-reporting": 139,
+        "mediating": 5,
+        "unclear": 21
+      },
+      "dominant_relation_type": "hostile"
+    },
+    {
+      "source": "Iran",
+      "target": "Turkiye",
+      "weight": 317,
+      "relation_type_breakdown": {
+        "supportive": 20,
+        "hostile": 119,
+        "skeptical": 44,
+        "neutral-reporting": 109,
+        "mediating": 0,
+        "unclear": 25
+      },
+      "dominant_relation_type": "hostile"
+    },
+    {
+      "source": "Saudi Arabia",
+      "target": "United States",
+      "weight": 195,
+      "relation_type_breakdown": {
+        "supportive": 12,
+        "hostile": 45,
+        "skeptical": 35,
+        "neutral-reporting": 94,
+        "mediating": 0,
+        "unclear": 9
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Pakistan",
+      "target": "United States",
+      "weight": 177,
+      "relation_type_breakdown": {
+        "supportive": 11,
+        "hostile": 42,
+        "skeptical": 28,
+        "neutral-reporting": 83,
+        "mediating": 4,
+        "unclear": 9
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
+      "source": "Turkiye",
+      "target": "United States",
+      "weight": 174,
+      "relation_type_breakdown": {
+        "supportive": 9,
+        "hostile": 43,
+        "skeptical": 24,
+        "neutral-reporting": 90,
+        "mediating": 1,
+        "unclear": 7
+      },
+      "dominant_relation_type": "neutral-reporting"
+    },
+    {
       "source": "Iran",
       "target": "United States",
-      "weight": 135,
+      "weight": 147,
       "relation_type_breakdown": {
         "supportive": 1,
-        "hostile": 89,
+        "hostile": 97,
         "skeptical": 2,
-        "neutral-reporting": 35,
+        "neutral-reporting": 37,
         "mediating": 0,
-        "unclear": 8
+        "unclear": 10
       },
       "dominant_relation_type": "hostile"
     }
@@ -248,6 +248,42 @@
       ],
       "actors_mentioned_in_post": "['Pakistan', 'Saudi Arabia']",
       "text_snippet": "🌍 global watch — border watch pakistan proposes 'mecca pact' for political engagement with houthis islamabad has revealed an agenda for an emergency meeting in mecca to facilitate political dialogue with houthi rebels. this move positions pakistan as a key mediator in the saudi-yemen conflict, impac"
+    },
+    {
+      "post_id": "2110978392711688644",
+      "actor_pair": [
+        "Pakistan",
+        "Iran"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "iiui holds roundtable discussion on “makkah pact (2026): opportunities for pakistan” the department of politics and international relations (ir) at the international islamic university islamabad (iiui), in collaboration with the sanober institute, organized a roundtable discussion titled “makkah pac"
+    },
+    {
+      "post_id": "2110978392711688644",
+      "actor_pair": [
+        "Saudi Arabia",
+        "Iran"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "iiui holds roundtable discussion on “makkah pact (2026): opportunities for pakistan” the department of politics and international relations (ir) at the international islamic university islamabad (iiui), in collaboration with the sanober institute, organized a roundtable discussion titled “makkah pac"
+    },
+    {
+      "post_id": "2110404482613858769",
+      "actor_pair": [
+        "Pakistan",
+        "United States"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "📝dsg analysis📝 ———————————— 🇸🇦🇾🇪🇺🇸🇮🇷the november window 14 oct 26 bluf: trump has pushed any strike on iran past the 3 nov midterms, and tehran and the houthis are using the window. saudi arabia is absorbing strikes on its airports and aramco's dhahran complex with no deterrent and no ground respons"
+    },
+    {
+      "post_id": "2110404482613858769",
+      "actor_pair": [
+        "Pakistan",
+        "Iran"
+      ],
+      "actors_mentioned_in_post": "['Iran', 'Pakistan', 'Saudi Arabia', 'Turkiye', 'United States']",
+      "text_snippet": "📝dsg analysis📝 ———————————— 🇸🇦🇾🇪🇺🇸🇮🇷the november window 14 oct 26 bluf: trump has pushed any strike on iran past the 3 nov midterms, and tehran and the houthis are using the window. saudi arabia is absorbing strikes on its airports and aramco's dhahran complex with no deterrent and no ground respons"
     }
   ]
 }
